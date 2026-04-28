@@ -1,0 +1,64 @@
+package com.example.skybuddy.ui.home
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.skybuddy.core.result.AppResult
+import com.example.skybuddy.core.result.ErrorReason
+import com.example.skybuddy.data.db.FlightEntity
+import com.example.skybuddy.data.repository.FlightRepository
+import com.example.skybuddy.domain.usecase.AddTrackedFlightUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+data class HomeUiState(
+    val input: String = "",
+    val isAdding: Boolean = false,
+    val message: String? = null
+)
+
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val flightRepository: FlightRepository,
+    private val addTrackedFlight: AddTrackedFlightUseCase
+) : ViewModel() {
+
+    private val _ui = MutableStateFlow(HomeUiState())
+    val ui: StateFlow<HomeUiState> = _ui.asStateFlow()
+
+    val upcoming: StateFlow<List<FlightEntity>> = flightRepository.observeUpcoming()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val past: StateFlow<List<FlightEntity>> = flightRepository.observePast()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun onInputChanged(value: String) = _ui.update { it.copy(input = value) }
+
+    fun addFlight() {
+        val number = _ui.value.input.trim()
+        if (number.isBlank()) return
+        _ui.update { it.copy(isAdding = true, message = null) }
+        viewModelScope.launch {
+            val result = addTrackedFlight(number)
+            val message = when (result) {
+                is AppResult.Success -> "Tracking ${result.value.flightNumber}"
+                is AppResult.Error -> when (val r = result.reason) {
+                    ErrorReason.MissingApiKey -> "AirLabs key not configured — running offline"
+                    ErrorReason.Offline -> "Offline — using cached data if available"
+                    ErrorReason.NotFound -> "Flight not found"
+                    is ErrorReason.Network -> "Network error: ${r.message}"
+                    is ErrorReason.Unexpected -> "Unexpected: ${r.message}"
+                }
+            }
+            _ui.update { it.copy(isAdding = false, input = "", message = message) }
+        }
+    }
+
+    fun dismissMessage() = _ui.update { it.copy(message = null) }
+}
