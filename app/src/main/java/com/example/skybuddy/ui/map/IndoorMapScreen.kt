@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.FloatingActionButton
@@ -132,14 +132,14 @@ fun IndoorMapScreen(
                     onClick = onChatClicked,
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 ) {
-                    Icon(Icons.Filled.Chat, "Chat")
+                    Icon(Icons.AutoMirrored.Filled.Chat, "Chat")
                 }
                 Spacer(Modifier.height(8.dp))
                 FloatingActionButton(
                     onClick = onHelpClicked,
                     containerColor = MaterialTheme.colorScheme.secondaryContainer
                 ) {
-                    Icon(Icons.Filled.Help, "Help")
+                    Icon(Icons.AutoMirrored.Filled.Help, "Help")
                 }
                 Spacer(Modifier.height(8.dp))
                 FloatingActionButton(
