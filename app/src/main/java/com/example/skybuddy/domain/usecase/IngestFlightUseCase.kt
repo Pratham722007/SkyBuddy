@@ -25,7 +25,24 @@ class IngestFlightUseCase @Inject constructor(
         return try {
             val rawBarcodeText = barcodeScanner.scanBarcode(context, imageUri)
                 ?: return Result.failure(Exception("No barcode found in image"))
+            processBarcodeText(rawBarcodeText)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
+    suspend operator fun invoke(bitmap: android.graphics.Bitmap): Result<FlightEntity> {
+        return try {
+            val rawBarcodeText = barcodeScanner.scanBarcodeBitmap(bitmap)
+                ?: return Result.failure(Exception("No barcode found in image"))
+            processBarcodeText(rawBarcodeText)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun processBarcodeText(rawBarcodeText: String): Result<FlightEntity> {
+        return try {
             // Use the LLM to format the barcode text into a JSON
             val prompt = """
                 Extract the following details from this boarding pass barcode string and return ONLY a valid JSON object. 
@@ -41,14 +58,14 @@ class IngestFlightUseCase @Inject constructor(
                   "time": "14:30"
                 }
                 
-                Barcode Text: ${'$'}rawBarcodeText
+                Barcode Text: $rawBarcodeText
             """.trimIndent()
 
             val llmResponse = llmEngine.generateText(prompt)
             
             // Try to extract JSON from the response (removing markdown if present)
             val jsonString = llmResponse.substringAfter("{").substringBeforeLast("}")
-            val json = JSONObject("{${'$'}{jsonString}}")
+            val json = JSONObject("{$jsonString}")
             
             val flightNumber = json.optString("flightNumber", "UNKNOWN").uppercase()
             val airline = json.optString("airline", "Unknown")

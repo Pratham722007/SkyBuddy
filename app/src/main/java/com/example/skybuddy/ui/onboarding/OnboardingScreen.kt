@@ -1,5 +1,7 @@
 package com.example.skybuddy.ui.onboarding
 
+import android.Manifest
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.skybuddy.core.permission.rememberMultiplePermissionsController
 
 @Composable
 fun OnboardingScreen(
@@ -30,6 +33,27 @@ fun OnboardingScreen(
     viewModel: OnboardingViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+
+    val permissionsController = rememberMultiplePermissionsController { _ ->
+        viewModel.onContinueFromWelcome()
+    }
+
+    val permissionsToRequest = mutableListOf(
+        Manifest.permission.CAMERA,
+        Manifest.permission.RECORD_AUDIO,
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    )
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        permissionsToRequest.add(Manifest.permission.ACTIVITY_RECOGNITION)
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        permissionsToRequest.add(Manifest.permission.BLUETOOTH_SCAN)
+        permissionsToRequest.add(Manifest.permission.BLUETOOTH_CONNECT)
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+    }
 
     LaunchedEffect(state.phase) {
         if (state.phase is OnboardingPhase.Done) onModelReady()
@@ -50,7 +74,9 @@ fun OnboardingScreen(
                 Spacer(Modifier.height(16.dp))
                 when (val phase = state.phase) {
                     OnboardingPhase.Welcome -> {
-                        Button(onClick = viewModel::onContinueFromWelcome) { Text("Get started") }
+                        Button(onClick = {
+                            permissionsController.request(permissionsToRequest.toTypedArray())
+                        }) { Text("Get started") }
                     }
                     is OnboardingPhase.TokenEntry -> {
                         Text(

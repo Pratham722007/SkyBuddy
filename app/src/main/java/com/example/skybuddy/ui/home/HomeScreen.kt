@@ -1,6 +1,9 @@
 package com.example.skybuddy.ui.home
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -38,8 +42,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.skybuddy.domain.usecase.IngestFlightUseCase
+import android.os.Build
+import androidx.compose.runtime.LaunchedEffect
+import com.example.skybuddy.core.permission.rememberMultiplePermissionsController
+import com.example.skybuddy.core.permission.rememberPermissionController
 import com.example.skybuddy.ui.flight.ExpandableFlightCard
 import com.example.skybuddy.ui.journey.GlobalStateDropdown
 import com.example.skybuddy.ui.journey.JourneyViewModel
@@ -50,8 +58,7 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     onOpenChat: (String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
-    journeyViewModel: JourneyViewModel = hiltViewModel(),
-    ingestFlightUseCase: IngestFlightUseCase? = null // Passed or injected
+    journeyViewModel: JourneyViewModel = hiltViewModel()
 ) {
     val ui by viewModel.ui.collectAsState()
     val upcoming by viewModel.upcoming.collectAsState()
@@ -60,23 +67,68 @@ fun HomeScreen(
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    var isIngesting by remember { mutableStateOf(false) }
+
+    val permissionsController = rememberMultiplePermissionsController { _ -> }
+
+    LaunchedEffect(Unit) {
+        val permissionsToRequest = mutableListOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            permissionsToRequest.add(Manifest.permission.ACTIVITY_RECOGNITION)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissionsToRequest.add(Manifest.permission.BLUETOOTH_SCAN)
+            permissionsToRequest.add(Manifest.permission.BLUETOOTH_CONNECT)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        val missingPermissions = permissionsToRequest.filter {
+            ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missingPermissions.isNotEmpty()) {
+            permissionsController.request(missingPermissions.toTypedArray())
+        }
+    }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri: Uri? ->
             uri?.let { 
-                if (ingestFlightUseCase != null) {
-                    coroutineScope.launch {
-                        isIngesting = true
-                        val result = ingestFlightUseCase(context, it)
-                        isIngesting = false
-                        // Handle result if needed (e.g. show toast)
+                coroutineScope.launch {
+                    val result = viewModel.ingestFlight(context, it)
+                    if (result.isFailure) {
+                        Toast.makeText(context, result.exceptionOrNull()?.message ?: "Failed", Toast.LENGTH_LONG).show()
                     }
                 }
             }
         }
     )
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview(),
+        onResult = { bitmap ->
+            bitmap?.let {
+                coroutineScope.launch {
+                    val result = viewModel.ingestFlightBitmap(it)
+                    if (result.isFailure) {
+                        Toast.makeText(context, result.exceptionOrNull()?.message ?: "Failed", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+    )
+    
+    val cameraPermission = rememberPermissionController { granted ->
+        if (granted) cameraLauncher.launch(null)
+        else Toast.makeText(context, "Camera permission required", Toast.LENGTH_SHORT).show()
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -110,21 +162,35 @@ fun HomeScreen(
                 ) {
                     Text("Ready for your flight?", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(8.dp))
-                    Button(
-                        onClick = { 
-                            photoPickerLauncher.launch(
-                                androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                            ) 
-                        },
-                        enabled = !ui.isAdding,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        if (ui.isAdding) {
-                            CircularProgressIndicator(modifier = Modifier.height(20.dp), color = MaterialTheme.colorScheme.onPrimary)
-                        } else {
-                            Icon(Icons.Filled.CameraAlt, contentDescription = "Camera")
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { 
+                                val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                                if (granted) cameraLauncher.launch(null) else cameraPermission.request(Manifest.permission.CAMERA)
+                            },
+                            enabled = !ui.isAdding,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            if (ui.isAdding) {
+                                CircularProgressIndicator(modifier = Modifier.height(20.dp), color = MaterialTheme.colorScheme.onPrimary)
+                            } else {
+                                Icon(Icons.Filled.CameraAlt, contentDescription = "Camera")
+                                Spacer(Modifier.padding(4.dp))
+                                Text("Camera")
+                            }
+                        }
+                        Button(
+                            onClick = { 
+                                photoPickerLauncher.launch(
+                                    androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                ) 
+                            },
+                            enabled = !ui.isAdding,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Filled.Image, contentDescription = "Gallery")
                             Spacer(Modifier.padding(4.dp))
-                            Text("Upload Boarding Pass")
+                            Text("Gallery")
                         }
                     }
                     Spacer(Modifier.height(8.dp))

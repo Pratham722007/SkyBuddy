@@ -1,6 +1,7 @@
 package com.example.skybuddy.ui.home
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -47,6 +48,19 @@ class HomeViewModel @Inject constructor(
     suspend fun ingestFlight(context: Context, uri: Uri): Result<FlightEntity> {
         _ui.update { it.copy(isAdding = true, message = "Ingesting boarding pass...") }
         val result = ingestFlightUseCase(context, uri)
+        _ui.update { 
+            it.copy(
+                isAdding = false,
+                message = if (result.isSuccess) "Flight ${result.getOrNull()?.flightNumber} tracked!" 
+                          else "Failed to ingest boarding pass: ${result.exceptionOrNull()?.message}"
+            ) 
+        }
+        return result
+    }
+
+    suspend fun ingestFlightBitmap(bitmap: Bitmap): Result<FlightEntity> {
+        _ui.update { it.copy(isAdding = true, message = "Scanning boarding pass...") }
+        val result = ingestFlightUseCase(bitmap)
         _ui.update { 
             it.copy(
                 isAdding = false,

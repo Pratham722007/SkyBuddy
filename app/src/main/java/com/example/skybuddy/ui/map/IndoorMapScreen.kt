@@ -38,6 +38,17 @@ import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.skybuddy.ui.journey.GlobalStateDropdown
+import androidx.compose.ui.graphics.vector.PathParser
+
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.example.skybuddy.location.LocationTrackerService
+import com.example.skybuddy.ui.journey.GlobalStateDropdown
 import com.example.skybuddy.ui.journey.JourneyViewModel
 
 @Composable
@@ -52,6 +63,19 @@ fun IndoorMapScreen(
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var showCalibration by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (granted) {
+            val intent = Intent(context, LocationTrackerService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+    }
 
     val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
         scale = (scale * zoomChange).coerceIn(0.5f, 5f)
@@ -82,7 +106,7 @@ fun IndoorMapScreen(
                 // Draw map layout
                 val floor = uiState.layout?.floors?.find { it.level == uiState.currentFloor }
                 floor?.paths?.forEach { pathString ->
-                    val path = Path().apply { addPathNodes(pathString) }
+                    val path = PathParser().parsePathString(pathString).toPath()
                     drawPath(
                         path = path,
                         color = Color.DarkGray,
