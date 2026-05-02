@@ -42,6 +42,10 @@ class FlightRepository @Inject constructor(
         flightDao.updateSeat(flightNumber.uppercase(), seat)
     }
 
+    suspend fun upsert(flight: FlightEntity) = withContext(io) {
+        flightDao.upsert(flight)
+    }
+
     suspend fun refresh(flightNumber: String): AppResult<FlightEntity> = withContext(io) {
         val number = flightNumber.uppercase()
         val apiKey = BuildConfig.AIRLABS_API_KEY

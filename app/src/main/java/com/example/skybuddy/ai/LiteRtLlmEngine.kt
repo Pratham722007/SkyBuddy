@@ -42,7 +42,8 @@ class LiteRtLlmEngine @Inject constructor(
     fun expectedModelPath(): String = File(context.filesDir, MODEL_FILE).absolutePath
 
     override fun initialize(preferred: Backend?): Flow<InitState> = flow {
-        // CPU-only: GPU delegate hangs on a kgsl fence on this device family.
+        // CPU for text generation (GPU delegate hangs on a kgsl fence on some device families),
+        // but Vision MUST use GPU on devices that don't support advanced CPU vector instructions.
         emit(InitState.Loading(Backend.CPU, InitStage.ProbingDevice))
         val attempt = tryInitialize(Backend.CPU) { stage ->
             emit(InitState.Loading(Backend.CPU, stage))
@@ -62,11 +63,12 @@ class LiteRtLlmEngine @Inject constructor(
         }
 
         progress(InitStage.OpeningModel)
-        val liteRtBackend = LiteRtBackend.CPU()
+        val textBackend = LiteRtBackend.CPU()
+        val visionBackend = if (acceleration.isGpuAvailable()) LiteRtBackend.GPU() else LiteRtBackend.CPU()
         val config = EngineConfig(
             modelPath = modelPath,
-            backend = liteRtBackend,
-            visionBackend = liteRtBackend,
+            backend = textBackend,
+            visionBackend = visionBackend,
             cacheDir = context.cacheDir.absolutePath
         )
         val newEngine = Engine(config)

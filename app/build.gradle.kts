@@ -46,8 +46,6 @@ android {
         }
     }
 
-    // AGP 8.2.2 cannot do source/target compat 21 yet — keep at 17.
-    // The JDK toolchain (which compiles the bytecode) is bumped to 21 below.
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -58,7 +56,7 @@ android {
     }
 
     kotlin {
-        jvmToolchain(21)
+        jvmToolchain(17)
     }
 
     buildFeatures {
@@ -92,9 +90,11 @@ dependencies {
     implementation("androidx.hilt:hilt-work:1.2.0")
     ksp("androidx.hilt:hilt-compiler:1.2.0")
 
-    // ML Kit Text Recognition & Image Labeling
+    // ML Kit Text Recognition, Image Labeling & Barcode Scanning
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
     implementation("com.google.mlkit:image-labeling:17.0.9")
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
     // LiteRT LM (on-device LLM)
     implementation("com.google.ai.edge.litertlm:litertlm-android:latest.release")

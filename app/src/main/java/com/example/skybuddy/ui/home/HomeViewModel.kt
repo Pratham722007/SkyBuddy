@@ -1,5 +1,7 @@
 package com.example.skybuddy.ui.home
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.skybuddy.core.result.AppResult
@@ -7,6 +9,7 @@ import com.example.skybuddy.core.result.ErrorReason
 import com.example.skybuddy.data.db.FlightEntity
 import com.example.skybuddy.data.repository.FlightRepository
 import com.example.skybuddy.domain.usecase.AddTrackedFlightUseCase
+import com.example.skybuddy.domain.usecase.IngestFlightUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,7 +29,8 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val flightRepository: FlightRepository,
-    private val addTrackedFlight: AddTrackedFlightUseCase
+    private val addTrackedFlight: AddTrackedFlightUseCase,
+    private val ingestFlightUseCase: IngestFlightUseCase
 ) : ViewModel() {
 
     private val _ui = MutableStateFlow(HomeUiState())
@@ -39,6 +43,19 @@ class HomeViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun onInputChanged(value: String) = _ui.update { it.copy(input = value) }
+
+    suspend fun ingestFlight(context: Context, uri: Uri): Result<FlightEntity> {
+        _ui.update { it.copy(isAdding = true, message = "Ingesting boarding pass...") }
+        val result = ingestFlightUseCase(context, uri)
+        _ui.update { 
+            it.copy(
+                isAdding = false,
+                message = if (result.isSuccess) "Flight ${result.getOrNull()?.flightNumber} tracked!" 
+                          else "Failed to ingest boarding pass: ${result.exceptionOrNull()?.message}"
+            ) 
+        }
+        return result
+    }
 
     fun addFlight() {
         val number = _ui.value.input.trim()

@@ -1,0 +1,44 @@
+{
+  "floors": [
+    {
+      "level": 0,
+      "name": "Ground Floor",
+      "paths": [
+        "M 100 100 L 900 100 L 900 900 L 100 900 Z",
+        "M 300 300 L 700 300 L 700 700 L 300 700 Z"
+      ],
+      "nodes": [
+        { "id": "ENTRANCE", "type": "DOOR", "x": 500, "y": 900 },
+        { "id": "CHECK_IN_A", "type": "BAGGAGE", "x": 300, "y": 700 },
+        { "id": "SECURITY_MAIN", "type": "CHECKPOINT", "x": 500, "y": 500 },
+        { "id": "STV_F0_COFFEE", "type": "SHOP", "x": 700, "y": 700 }
+      ],
+      "edges": [
+        { "from": "ENTRANCE", "to": "CHECK_IN_A", "distance": 282 },
+        { "from": "CHECK_IN_A", "to": "SECURITY_MAIN", "distance": 282 },
+        { "from": "ENTRANCE", "to": "STV_F0_COFFEE", "distance": 282 },
+        { "from": "STV_F0_COFFEE", "to": "SECURITY_MAIN", "distance": 282 }
+      ]
+    },
+    {
+      "level": 1,
+      "name": "First Floor (Departures)",
+      "paths": [
+        "M 100 100 L 900 100 L 900 900 L 100 900 Z"
+      ],
+      "nodes": [
+        { "id": "SECURITY_EXIT", "type": "CHECKPOINT", "x": 500, "y": 800 },
+        { "id": "DUTY_FREE", "type": "SHOP", "x": 500, "y": 600 },
+        { "id": "GATE_1", "type": "GATE", "x": 200, "y": 200 },
+        { "id": "GATE_2", "type": "GATE", "x": 500, "y": 200 },
+        { "id": "GATE_3", "type": "GATE", "x": 800, "y": 200 }
+      ],
+      "edges": [
+        { "from": "SECURITY_EXIT", "to": "DUTY_FREE", "distance": 200 },
+        { "from": "DUTY_FREE", "to": "GATE_1", "distance": 500 },
+        { "from": "DUTY_FREE", "to": "GATE_2", "distance": 400 },
+        { "from": "DUTY_FREE", "to": "GATE_3", "distance": 500 }
+      ]
+    }
+  ]
+}
