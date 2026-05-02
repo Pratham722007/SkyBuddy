@@ -6,8 +6,8 @@ import com.example.skybuddy.data.repository.LayoutNode
 import com.example.skybuddy.data.repository.MapLayout
 import com.example.skybuddy.data.repository.MapRepository
 import com.example.skybuddy.domain.pathfinding.AStarPathfinder
+import com.example.skybuddy.domain.state.JourneyManager
 import com.example.skybuddy.ui.journey.JourneyPhase
-import com.example.skybuddy.ui.journey.JourneyViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,7 +29,7 @@ data class MapUiState(
 @HiltViewModel
 class IndoorMapViewModel @Inject constructor(
     private val mapRepository: MapRepository,
-    private val journeyViewModel: JourneyViewModel
+    private val journeyManager: JourneyManager
 ) : ViewModel() {
 
     private val pathfinder = AStarPathfinder()
@@ -39,7 +39,7 @@ class IndoorMapViewModel @Inject constructor(
     init {
         loadMap()
         viewModelScope.launch {
-            journeyViewModel.currentPhase.collectLatest { phase ->
+            journeyManager.currentPhase.collectLatest { phase ->
                 updatePathForPhase(phase)
             }
         }
@@ -50,7 +50,7 @@ class IndoorMapViewModel @Inject constructor(
             try {
                 val layout = mapRepository.getMapLayout()
                 _uiState.update { it.copy(layout = layout) }
-                updatePathForPhase(journeyViewModel.currentPhase.value)
+                updatePathForPhase(journeyManager.currentPhase.value)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
