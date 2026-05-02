@@ -51,6 +51,7 @@ fun IndoorMapScreen(
 
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
+    var showCalibration by remember { mutableStateOf(false) }
 
     val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
         scale = (scale * zoomChange).coerceIn(0.5f, 5f)
@@ -84,8 +85,8 @@ fun IndoorMapScreen(
                     val path = Path().apply { addPathNodes(pathString) }
                     drawPath(
                         path = path,
-                        color = Color.LightGray,
-                        style = Stroke(width = 4f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                        color = Color.DarkGray,
+                        style = Stroke(width = 8f, cap = StrokeCap.Round, join = StrokeJoin.Round)
                     )
                 }
 
@@ -119,7 +120,9 @@ fun IndoorMapScreen(
 
             NavigationBanner(
                 stepText = uiState.navigationStep,
-                modifier = Modifier.align(Alignment.TopCenter)
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
             // FABs
@@ -153,12 +156,33 @@ fun IndoorMapScreen(
                 }
                 Spacer(Modifier.height(8.dp))
                 FloatingActionButton(
-                    onClick = { /* TODO Sprint 3: Calibration */ },
+                    onClick = { showCalibration = true },
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 ) {
                     Icon(Icons.Filled.Sync, "Change Position")
                 }
             }
         }
+    }
+
+    if (showCalibration) {
+        val currentFloorNodes = uiState.layout?.floors?.find { it.level == uiState.currentFloor }?.nodes ?: emptyList()
+        CalibrationBottomSheet(
+            nodes = currentFloorNodes,
+            onSemanticCalibrate = { node ->
+                viewModel.setLocation(node.x, node.y)
+                showCalibration = false
+            },
+            onVisualCalibrate = {
+                viewModel.setLocation(
+                    x = uiState.currentX - (offset.x / scale),
+                    y = uiState.currentY - (offset.y / scale)
+                )
+                offset = Offset.Zero
+                scale = 1f
+                showCalibration = false
+            },
+            onDismiss = { showCalibration = false }
+        )
     }
 }

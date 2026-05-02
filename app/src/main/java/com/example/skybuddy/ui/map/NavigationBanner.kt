@@ -2,6 +2,7 @@ package com.example.skybuddy.ui.map
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -18,6 +19,7 @@ fun NavigationBanner(
     if (stepText.isNotBlank()) {
         Surface(
             color = MaterialTheme.colorScheme.secondaryContainer,
+            shape = RoundedCornerShape(12.dp),
             modifier = modifier.fillMaxWidth()
         ) {
             Text(

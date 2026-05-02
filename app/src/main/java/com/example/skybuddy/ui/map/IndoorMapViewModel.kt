@@ -7,12 +7,15 @@ import com.example.skybuddy.data.repository.MapLayout
 import com.example.skybuddy.data.repository.MapRepository
 import com.example.skybuddy.domain.pathfinding.AStarPathfinder
 import com.example.skybuddy.domain.state.JourneyManager
+import com.example.skybuddy.location.IndoorLocationManager
 import com.example.skybuddy.ui.journey.JourneyPhase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -29,12 +32,24 @@ data class MapUiState(
 @HiltViewModel
 class IndoorMapViewModel @Inject constructor(
     private val mapRepository: MapRepository,
-    private val journeyManager: JourneyManager
+    private val journeyManager: JourneyManager,
+    private val indoorLocationManager: IndoorLocationManager
 ) : ViewModel() {
 
     private val pathfinder = AStarPathfinder()
-    private val _uiState = MutableStateFlow(MapUiState())
-    val uiState: StateFlow<MapUiState> = _uiState.asStateFlow()
+    private val _internalState = MutableStateFlow(MapUiState())
+    
+    val uiState: StateFlow<MapUiState> = combine(
+        _internalState,
+        indoorLocationManager.currentX,
+        indoorLocationManager.currentY
+    ) { state, x, y ->
+        state.copy(currentX = x, currentY = y)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = MapUiState()
+    )
 
     init {
         loadMap()
@@ -49,7 +64,7 @@ class IndoorMapViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val layout = mapRepository.getMapLayout()
-                _uiState.update { it.copy(layout = layout) }
+                _internalState.update { it.copy(layout = layout) }
                 updatePathForPhase(journeyManager.currentPhase.value)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -58,7 +73,7 @@ class IndoorMapViewModel @Inject constructor(
     }
 
     private fun updatePathForPhase(phase: JourneyPhase) {
-        val layout = _uiState.value.layout ?: return
+        val layout = _internalState.value.layout ?: return
         var startId = ""
         var goalId = ""
         var stepText = ""
@@ -70,33 +85,33 @@ class IndoorMapViewModel @Inject constructor(
                 goalId = "CHECK_IN_A"
                 stepText = "Step 1: Proceed to Baggage Drop."
                 floor = 0
-                _uiState.update { it.copy(currentX = 500f, currentY = 900f) }
+                indoorLocationManager.calibratePosition(500f, 900f)
             }
             JourneyPhase.BAGGAGE_DROP -> {
                 startId = "CHECK_IN_A"
                 goalId = "SECURITY_MAIN"
                 stepText = "Step 2: Head to Security."
                 floor = 0
-                _uiState.update { it.copy(currentX = 300f, currentY = 700f) }
+                indoorLocationManager.calibratePosition(300f, 700f)
             }
             JourneyPhase.SECURITY_CHECKPOINT -> {
                 startId = "SECURITY_EXIT"
                 goalId = "GATE_1" // Just defaulting to Gate 1 for now
                 stepText = "Step 3: Head to Gate 1."
                 floor = 1
-                _uiState.update { it.copy(currentX = 500f, currentY = 800f) }
+                indoorLocationManager.calibratePosition(500f, 800f)
             }
             JourneyPhase.GATE -> {
                 startId = "GATE_1"
                 goalId = "GATE_1"
                 stepText = "You have arrived at your gate."
                 floor = 1
-                _uiState.update { it.copy(currentX = 200f, currentY = 200f) }
+                indoorLocationManager.calibratePosition(200f, 200f)
             }
         }
 
         if (startId == goalId) {
-            _uiState.update { 
+            _internalState.update { 
                 it.copy(
                     currentFloor = floor, 
                     navigationStep = stepText, 
@@ -105,7 +120,7 @@ class IndoorMapViewModel @Inject constructor(
             }
         } else {
             val path = pathfinder.findPath(layout, floor, startId, goalId)
-            _uiState.update { 
+            _internalState.update { 
                 it.copy(
                     currentFloor = floor, 
                     navigationStep = stepText, 
@@ -116,6 +131,6 @@ class IndoorMapViewModel @Inject constructor(
     }
 
     fun setLocation(x: Float, y: Float) {
-        _uiState.update { it.copy(currentX = x, currentY = y) }
+        indoorLocationManager.calibratePosition(x, y)
     }
 }

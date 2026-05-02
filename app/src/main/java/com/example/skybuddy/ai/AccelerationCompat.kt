@@ -13,12 +13,22 @@ import javax.inject.Singleton
 class AccelerationCompat @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
+    fun isEmulator(): Boolean = Build.PRODUCT.contains("sdk") ||
+            Build.MODEL.contains("Emulator") ||
+            Build.MODEL.contains("Android SDK built for x86") ||
+            Build.DEVICE.contains("emulator") ||
+            Build.FINGERPRINT.contains("generic")
+
     fun isGpuAvailable(): Boolean = try {
-        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        val info: ConfigurationInfo = am.deviceConfigurationInfo
-        val supportsGles3 = info.reqGlEsVersion >= 0x30000
-        val recentEnough = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-        supportsGles3 && recentEnough
+        if (isEmulator()) {
+            false
+        } else {
+            val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val info: ConfigurationInfo = am.deviceConfigurationInfo
+            val supportsGles3 = info.reqGlEsVersion >= 0x30000
+            val recentEnough = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+            supportsGles3 && recentEnough
+        }
     } catch (t: Throwable) {
         Log.w(TAG, "GPU probe failed", t)
         false

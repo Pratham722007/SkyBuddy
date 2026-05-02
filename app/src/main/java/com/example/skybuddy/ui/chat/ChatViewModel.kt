@@ -6,36 +6,27 @@ import androidx.lifecycle.viewModelScope
 import com.example.skybuddy.data.db.FlightEntity
 import com.example.skybuddy.data.db.LuggageEntity
 import com.example.skybuddy.data.db.ReceiptEntity
+import com.example.skybuddy.data.db.TimelineEventDao
+import com.example.skybuddy.data.db.TimelineEventEntity
 import com.example.skybuddy.data.repository.FlightRepository
+import com.example.skybuddy.domain.state.JourneyManager
 import com.example.skybuddy.domain.usecase.ChatTurnUseCase
 import com.example.skybuddy.domain.usecase.DescribeLuggageUseCase
 import com.example.skybuddy.domain.usecase.RecognizeReceiptUseCase
+import com.example.skybuddy.location.IndoorLocationManager
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-enum class ChatRole { USER, ASSISTANT }
-
-sealed interface ChatItem {
-    val id: Long
-
-    data class Message(
-        override val id: Long,
-        val role: ChatRole,
-        val text: String
-    ) : ChatItem
-
-    data class FlightCard(override val id: Long, val flight: FlightEntity) : ChatItem
-    data class LuggageCard(override val id: Long, val luggage: LuggageEntity) : ChatItem
-    data class ReceiptListCard(override val id: Long, val receipts: List<ReceiptEntity>) : ChatItem
-}
-
 data class ChatUiState(
-    val items: List<ChatItem> = emptyList(),
     val input: String = "",
     val isThinking: Boolean = false,
     val isIntercomMode: Boolean = false
@@ -44,23 +35,30 @@ data class ChatUiState(
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val flightRepository: FlightRepository,
+    private val timelineEventDao: TimelineEventDao,
     private val chatTurn: ChatTurnUseCase,
     private val recognizeReceipt: RecognizeReceiptUseCase,
     private val describeLuggage: DescribeLuggageUseCase,
+    private val journeyManager: JourneyManager,
+    private val indoorLocationManager: IndoorLocationManager,
     val voiceController: VoiceController
 ) : ViewModel() {
+
+    private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+
+    val timelineEvents: StateFlow<List<TimelineEventEntity>> = timelineEventDao.getAllEvents()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _state = MutableStateFlow(ChatUiState())
     val state: StateFlow<ChatUiState> = _state.asStateFlow()
 
-    private var nextId = 1L
     private var pinnedFlightNumber: String? = null
 
     private val _pinnedFlight = MutableStateFlow<FlightEntity?>(null)
     val pinnedFlight: StateFlow<FlightEntity?> = _pinnedFlight.asStateFlow()
 
     fun setFlightContext(flightNumber: String?) {
-        if (flightNumber.isNullOrBlank()) return
+        if (flightNumber.isNullOrBlank() || flightNumber == "help" || flightNumber == "timeline") return
         if (flightNumber == pinnedFlightNumber) return
         pinnedFlightNumber = flightNumber
         viewModelScope.launch {
@@ -73,25 +71,58 @@ class ChatViewModel @Inject constructor(
     fun onInputChanged(value: String) = _state.update { it.copy(input = value) }
 
     fun toggleIntercom() = _state.update { it.copy(isIntercomMode = !it.isIntercomMode) }
+    
+    private fun getSpatialContext(): String {
+        val x = indoorLocationManager.currentX.value
+        val y = indoorLocationManager.currentY.value
+        val phase = journeyManager.currentPhase.value.displayName
+        return "[SYSTEM CONTEXT: User is at X:$x, Y:$y. State is $phase.]"
+    }
 
-    fun sendText(): String? {
+    fun sendText(hiddenContext: String? = null): String? {
         val prompt = _state.value.input.trim()
         if (prompt.isBlank() || _state.value.isThinking) return null
-        addUser(prompt)
-        _state.update { it.copy(input = "", isThinking = true) }
+        
         viewModelScope.launch {
-            val result = chatTurn.text(prompt, pinnedFlightNumber)
+            timelineEventDao.insert(TimelineEventEntity(
+                timestamp = System.currentTimeMillis(),
+                role = "USER",
+                uiComponentType = "TEXT",
+                content = prompt
+            ))
+            
+            _state.update { it.copy(input = "", isThinking = true) }
+            
+            val spatialContext = getSpatialContext()
+            val finalContext = if (hiddenContext != null) "$spatialContext\n$hiddenContext" else spatialContext
+            val query = "$finalContext\n$prompt"
+            val result = chatTurn.text(query, pinnedFlightNumber)
+            
             applyTurn(result.response, result.flight, result.luggage, result.receipts)
         }
         return prompt
     }
 
-    fun sendImage(prompt: String, bitmap: Bitmap) {
+    fun sendImage(prompt: String, bitmap: Bitmap, hiddenContext: String? = null) {
         if (_state.value.isThinking) return
-        addUser(prompt.ifBlank { "Image" })
-        _state.update { it.copy(isThinking = true) }
+        
+        val actualPrompt = prompt.ifBlank { "Image" }
+        
         viewModelScope.launch {
-            val result = chatTurn.image(prompt, bitmap, pinnedFlightNumber)
+            timelineEventDao.insert(TimelineEventEntity(
+                timestamp = System.currentTimeMillis(),
+                role = "USER",
+                uiComponentType = "TEXT",
+                content = actualPrompt
+            ))
+            
+            _state.update { it.copy(input = "", isThinking = true) }
+            
+            val spatialContext = getSpatialContext()
+            val finalContext = if (hiddenContext != null) "$spatialContext\n$hiddenContext" else spatialContext
+            val query = "$finalContext\n$actualPrompt"
+            val result = chatTurn.image(query, bitmap, pinnedFlightNumber)
+            
             applyTurn(result.response, result.flight, result.luggage, result.receipts)
         }
     }
@@ -99,39 +130,69 @@ class ChatViewModel @Inject constructor(
     fun captureReceipt(bitmap: Bitmap) {
         viewModelScope.launch {
             val text = recognizeReceipt(bitmap).ifBlank { "No text detected on receipt" }
-            _state.update { it.copy(items = it.items + ChatItem.Message(nextId(), ChatRole.ASSISTANT, "Receipt: $text")) }
+            timelineEventDao.insert(TimelineEventEntity(
+                timestamp = System.currentTimeMillis(),
+                role = "GEMMA",
+                uiComponentType = "TEXT",
+                content = "Receipt: $text"
+            ))
         }
     }
 
     fun captureLuggage(bitmap: Bitmap) {
         viewModelScope.launch {
             val description = describeLuggage(bitmap)
-            _state.update {
-                it.copy(items = it.items + ChatItem.Message(nextId(), ChatRole.ASSISTANT, "Saved bag: $description"))
-            }
+            timelineEventDao.insert(TimelineEventEntity(
+                timestamp = System.currentTimeMillis(),
+                role = "GEMMA",
+                uiComponentType = "TEXT",
+                content = "Saved bag: $description"
+            ))
         }
     }
 
-    private fun addUser(text: String) {
-        _state.update { it.copy(items = it.items + ChatItem.Message(nextId(), ChatRole.USER, text)) }
-    }
-
-    private fun applyTurn(
+    private suspend fun applyTurn(
         response: String,
         flight: FlightEntity?,
         luggage: LuggageEntity?,
         receipts: List<ReceiptEntity>?
     ) {
-        _state.update { current ->
-            val additions = buildList {
-                add(ChatItem.Message(nextId(), ChatRole.ASSISTANT, response))
-                flight?.let { add(ChatItem.FlightCard(nextId(), it)) }
-                luggage?.let { add(ChatItem.LuggageCard(nextId(), it)) }
-                receipts?.let { add(ChatItem.ReceiptListCard(nextId(), it)) }
-            }
-            current.copy(items = current.items + additions, isThinking = false)
-        }
-    }
+        timelineEventDao.insert(TimelineEventEntity(
+            timestamp = System.currentTimeMillis(),
+            role = "GEMMA",
+            uiComponentType = "TEXT",
+            content = response
+        ))
 
-    private fun nextId(): Long = nextId++
+        flight?.let {
+            timelineEventDao.insert(TimelineEventEntity(
+                timestamp = System.currentTimeMillis() + 1,
+                role = "GEMMA",
+                uiComponentType = "FLIGHT_CARD",
+                content = moshi.adapter(FlightEntity::class.java).toJson(it)
+            ))
+        }
+
+        luggage?.let {
+            timelineEventDao.insert(TimelineEventEntity(
+                timestamp = System.currentTimeMillis() + 2,
+                role = "GEMMA",
+                uiComponentType = "LUGGAGE_CARD",
+                content = moshi.adapter(LuggageEntity::class.java).toJson(it)
+            ))
+        }
+
+        if (!receipts.isNullOrEmpty()) {
+            val type = com.squareup.moshi.Types.newParameterizedType(List::class.java, ReceiptEntity::class.java)
+            val adapter: com.squareup.moshi.JsonAdapter<List<ReceiptEntity>> = moshi.adapter(type)
+            timelineEventDao.insert(TimelineEventEntity(
+                timestamp = System.currentTimeMillis() + 3,
+                role = "GEMMA",
+                uiComponentType = "RECEIPT_CARD",
+                content = adapter.toJson(receipts)
+            ))
+        }
+
+        _state.update { it.copy(isThinking = false) }
+    }
 }

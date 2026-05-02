@@ -51,15 +51,36 @@ fun ChatScreen(
 ) {
     val voiceController = viewModel.voiceController
     val state by viewModel.state.collectAsState()
+    val timelineEvents by viewModel.timelineEvents.collectAsState()
     val pinnedFlight by viewModel.pinnedFlight.collectAsState()
     val voiceEvent by voiceController.events.collectAsState()
     val context = LocalContext.current
     val listState = rememberLazyListState()
 
-    LaunchedEffect(flightNumber) { viewModel.setFlightContext(flightNumber) }
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            val prompt = if (flightNumber == "help") "Where do I go?" else state.input.trim()
+            viewModel.sendImage(prompt, bitmap)
+        }
+    }
+    val cameraPermission = rememberPermissionController { granted ->
+        if (granted) cameraLauncher.launch(null)
+    }
 
-    LaunchedEffect(state.items.size) {
-        if (state.items.isNotEmpty()) listState.animateScrollToItem(state.items.size - 1)
+    LaunchedEffect(flightNumber) { 
+        if (flightNumber == "help") {
+            val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+            if (granted) cameraLauncher.launch(null)
+            else cameraPermission.request(Manifest.permission.CAMERA)
+        } else {
+            viewModel.setFlightContext(flightNumber) 
+        }
+    }
+
+    LaunchedEffect(timelineEvents.size) {
+        if (timelineEvents.isNotEmpty()) listState.animateScrollToItem(timelineEvents.size - 1)
     }
 
     LaunchedEffect(voiceEvent) {
@@ -75,24 +96,15 @@ fun ChatScreen(
         }
     }
 
-    LaunchedEffect(state.items.lastOrNull()?.id) {
-        val last = state.items.lastOrNull()
-        if (state.isIntercomMode && last is ChatItem.Message && last.role == ChatRole.ASSISTANT) {
-            voiceController.speak(last.text)
+    LaunchedEffect(timelineEvents.lastOrNull()?.id) {
+        val last = timelineEvents.lastOrNull()
+        if (state.isIntercomMode && last?.uiComponentType == "TEXT" && last.role == "GEMMA") {
+            voiceController.speak(last.content)
         }
     }
 
     val recordPermission = rememberPermissionController { granted ->
         if (granted) voiceController.startListening()
-    }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
-        if (bitmap != null) viewModel.sendImage(state.input.trim(), bitmap)
-    }
-    val cameraPermission = rememberPermissionController { granted ->
-        if (granted) cameraLauncher.launch(null)
     }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -124,7 +136,7 @@ fun ChatScreen(
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(state.items, key = { it.id }) { ConversationFlowItem(it) }
+                items(timelineEvents, key = { it.id }) { ConversationFlowItem(it) }
                 if (state.isThinking) {
                     item {
                         Row(verticalAlignment = Alignment.CenterVertically) {
