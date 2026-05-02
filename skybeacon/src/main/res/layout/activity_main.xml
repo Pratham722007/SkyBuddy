@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/status_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ready to Broadcast"
+        android:textSize="18sp"
+        android:layout_marginBottom="32dp"/>
+
+    <Button
+        android:id="@+id/btn_costa"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Broadcast: Costa Coffee Tip"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btn_duty_free"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Broadcast: Duty Free Tip"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btn_stop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Stop Broadcast"
+        android:backgroundTint="#B00020"/>
+
+</LinearLayout>

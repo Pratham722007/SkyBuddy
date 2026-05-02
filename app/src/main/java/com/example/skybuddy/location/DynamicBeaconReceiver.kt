@@ -29,15 +29,15 @@ class DynamicBeaconReceiver @Inject constructor(
         @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
             result?.scanRecord?.let { scanRecord ->
-                // Example simplified BLE beacon parser (e.g. from service data or device name)
-                val deviceName = result.device?.name ?: scanRecord.deviceName
+                // Use the advertised device name from the scan record only.
+                // BluetoothDevice.getName() requires BLUETOOTH_CONNECT, which we do not hold.
+                val deviceName = scanRecord.deviceName
                 if (deviceName != null && deviceName.startsWith("SkyBeacon:")) {
                     val payload = deviceName.removePrefix("SkyBeacon:")
                     val parts = payload.split("|")
-                    if (parts.size >= 3) {
-                        val locationType = parts[0].trim()
-                        val locationName = parts[1].trim()
-                        val offer = parts[2].trim()
+                    if (parts.size >= 2) {
+                        val locationName = parts[0].trim()
+                        val offer = parts[1].trim()
 
                         val uniqueKey = "$locationName-$offer"
                         if (!processedBeacons.contains(uniqueKey)) {
@@ -46,8 +46,8 @@ class DynamicBeaconReceiver @Inject constructor(
 
                             // Simulate Absolute Anchoring: Snap PDR coordinates based on known beacon name
                             when (locationName) {
-                                "Costa Coffee" -> indoorLocationManager.calibratePosition(700f, 700f) // STV_F0_COFFEE
-                                "Duty Free" -> indoorLocationManager.calibratePosition(500f, 600f) // DUTY_FREE
+                                "Costa" -> indoorLocationManager.calibratePosition(700f, 700f) // STV_F0_COFFEE
+                                "DutyFree" -> indoorLocationManager.calibratePosition(500f, 600f) // DUTY_FREE
                             }
 
                             // Trigger JIT AI Generation

@@ -21,4 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "SkyBuddy"
 include(":app")
+include(":skybeacon")
 

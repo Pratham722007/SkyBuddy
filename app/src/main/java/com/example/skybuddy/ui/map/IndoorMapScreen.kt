@@ -1,10 +1,14 @@
 package com.example.skybuddy.ui.map
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,12 +18,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,19 +42,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.addPathNodes
-import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.skybuddy.ui.journey.GlobalStateDropdown
 import androidx.compose.ui.graphics.vector.PathParser
-
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.skybuddy.location.LocationTrackerService
 import com.example.skybuddy.ui.journey.GlobalStateDropdown
 import com.example.skybuddy.ui.journey.JourneyViewModel
@@ -63,6 +64,7 @@ fun IndoorMapScreen(
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var showCalibration by remember { mutableStateOf(false) }
+    var isVisualCalibrationMode by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -77,11 +79,6 @@ fun IndoorMapScreen(
         }
     }
 
-    val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
-        scale = (scale * zoomChange).coerceIn(0.5f, 5f)
-        offset += panChange
-    }
-
     Column(modifier = Modifier.fillMaxSize()) {
         GlobalStateDropdown(
             viewModel = journeyViewModel,
@@ -90,17 +87,29 @@ fun IndoorMapScreen(
                 .padding(16.dp)
         )
 
-        Box(modifier = Modifier.weight(1f)) {
+        BoxWithConstraints(modifier = Modifier.weight(1f)) {
+            val canvasWidth = constraints.maxWidth.toFloat()
+            val canvasHeight = constraints.maxHeight.toFloat()
+
+            // Calculate the translation required to center the map on the user's blue dot
+            val centerMapX = (canvasWidth / 2) - (uiState.currentX * scale)
+            val centerMapY = (canvasHeight / 2) - (uiState.currentY * scale)
+
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color(0xFFF0F0F0))
-                    .transformable(state = transformableState)
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            scale = (scale * zoom).coerceIn(0.5f, 5f)
+                            offset += pan
+                        }
+                    }
                     .graphicsLayer(
                         scaleX = scale,
                         scaleY = scale,
-                        translationX = offset.x,
-                        translationY = offset.y
+                        translationX = centerMapX + offset.x,
+                        translationY = centerMapY + offset.y
                     )
             ) {
                 // Draw map layout
@@ -129,6 +138,18 @@ fun IndoorMapScreen(
                     )
                 }
 
+                // Draw directional indicator
+                val arrowLength = 40f
+                val endX = uiState.currentX + kotlin.math.sin(uiState.currentHeading) * arrowLength
+                val endY = uiState.currentY - kotlin.math.cos(uiState.currentHeading) * arrowLength
+                drawLine(
+                    color = Color.Blue,
+                    start = Offset(uiState.currentX, uiState.currentY),
+                    end = Offset(endX, endY),
+                    strokeWidth = 8f,
+                    cap = StrokeCap.Round
+                )
+
                 // Draw Blue Dot for user position
                 drawCircle(
                     color = Color.Blue.copy(alpha = 0.3f),
@@ -142,48 +163,95 @@ fun IndoorMapScreen(
                 )
             }
 
-            NavigationBanner(
-                stepText = uiState.navigationStep,
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+            if (isVisualCalibrationMode) {
+                // Draw fixed crosshair in the center
+                Icon(
+                    imageVector = Icons.Filled.MyLocation,
+                    contentDescription = "Target Crosshair",
+                    tint = Color.Red,
+                    modifier = Modifier.align(Alignment.Center)
+                )
 
-            // FABs
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            ) {
-                FloatingActionButton(
-                    onClick = onChatClicked,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                // Calibration FABs
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Chat, "Chat")
+                    FloatingActionButton(
+                        onClick = {
+                            val newX = uiState.currentX - (offset.x / scale)
+                            val newY = uiState.currentY - (offset.y / scale)
+                            viewModel.setLocation(newX, newY)
+                            offset = Offset.Zero
+                            isVisualCalibrationMode = false
+                        },
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Icon(Icons.Filled.Check, "Confirm Position")
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    FloatingActionButton(
+                        onClick = { 
+                            offset = Offset.Zero
+                            isVisualCalibrationMode = false 
+                        },
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ) {
+                        Icon(Icons.Filled.Close, "Cancel")
+                    }
                 }
-                Spacer(Modifier.height(8.dp))
-                FloatingActionButton(
-                    onClick = onHelpClicked,
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                NavigationBanner(
+                    stepText = uiState.navigationStep,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+
+                // Regular FABs
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Help, "Help")
-                }
-                Spacer(Modifier.height(8.dp))
-                FloatingActionButton(
-                    onClick = { 
-                        offset = Offset.Zero
-                        scale = 1f
-                    },
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                ) {
-                    Icon(Icons.Filled.MyLocation, "Recenter")
-                }
-                Spacer(Modifier.height(8.dp))
-                FloatingActionButton(
-                    onClick = { showCalibration = true },
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    Icon(Icons.Filled.Sync, "Change Position")
+                    FloatingActionButton(
+                        onClick = onChatClicked,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Chat, "Chat")
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    FloatingActionButton(
+                        onClick = onHelpClicked,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Help, "Help")
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    FloatingActionButton(
+                        onClick = { 
+                            offset = Offset.Zero
+                            scale = 1f
+                        },
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    ) {
+                        Icon(Icons.Filled.MyLocation, "Recenter")
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    FloatingActionButton(
+                        onClick = { viewModel.simulateStep() },
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    ) {
+                        Icon(Icons.Filled.DirectionsWalk, "Simulate Step")
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    FloatingActionButton(
+                        onClick = { showCalibration = true },
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Icon(Icons.Filled.Sync, "Change Position")
+                    }
                 }
             }
         }
@@ -198,13 +266,9 @@ fun IndoorMapScreen(
                 showCalibration = false
             },
             onVisualCalibrate = {
-                viewModel.setLocation(
-                    x = uiState.currentX - (offset.x / scale),
-                    y = uiState.currentY - (offset.y / scale)
-                )
-                offset = Offset.Zero
-                scale = 1f
                 showCalibration = false
+                offset = Offset.Zero
+                isVisualCalibrationMode = true
             },
             onDismiss = { showCalibration = false }
         )

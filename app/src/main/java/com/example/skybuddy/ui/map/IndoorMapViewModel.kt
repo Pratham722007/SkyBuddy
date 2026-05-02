@@ -26,7 +26,8 @@ data class MapUiState(
     val currentPath: List<LayoutNode> = emptyList(),
     val navigationStep: String = "",
     val currentX: Float = 500f,
-    val currentY: Float = 900f
+    val currentY: Float = 900f,
+    val currentHeading: Float = 0f
 )
 
 @HiltViewModel
@@ -42,9 +43,10 @@ class IndoorMapViewModel @Inject constructor(
     val uiState: StateFlow<MapUiState> = combine(
         _internalState,
         indoorLocationManager.currentX,
-        indoorLocationManager.currentY
-    ) { state, x, y ->
-        state.copy(currentX = x, currentY = y)
+        indoorLocationManager.currentY,
+        indoorLocationManager.currentHeading
+    ) { state, x, y, heading ->
+        state.copy(currentX = x, currentY = y, currentHeading = heading)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -132,5 +134,9 @@ class IndoorMapViewModel @Inject constructor(
 
     fun setLocation(x: Float, y: Float) {
         indoorLocationManager.calibratePosition(x, y)
+    }
+
+    fun simulateStep() {
+        indoorLocationManager.onStepDetected()
     }
 }

@@ -21,7 +21,7 @@ class IndoorLocationManager @Inject constructor() {
     val currentHeading: StateFlow<Float> = _currentHeading.asStateFlow()
 
     // Fixed stride length in map units
-    private val strideLength = 15f 
+    private val strideLength = 3f 
 
     fun updateHeading(headingRadians: Float) {
         _currentHeading.value = headingRadians
