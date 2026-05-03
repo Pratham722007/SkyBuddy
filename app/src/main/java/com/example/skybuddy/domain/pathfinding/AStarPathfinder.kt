@@ -1,5 +1,6 @@
 package com.example.skybuddy.domain.pathfinding
 
+import android.util.Log
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -25,6 +26,7 @@ class AStarPathfinder {
     }
 
     fun findPath(layout: MapLayout, floorLevel: Int, startId: String, goalId: String): List<LayoutNode> {
+        Log.d("AStar", "Finding path from $startId to $goalId on floor $floorLevel")
         val floor = layout.floors.find { it.level == floorLevel } ?: return emptyList()
         val startNode = floor.nodes.find { it.id == startId } ?: return emptyList()
         val goalNode = floor.nodes.find { it.id == goalId } ?: return emptyList()
@@ -34,6 +36,7 @@ class AStarPathfinder {
         
         // 2. Build Visibility Graph
         val visibilityGraph = buildVisibilityGraph(floor, mask)
+        Log.d("AStar", "Visibility graph built. Start node neighbors: ${visibilityGraph[startId]?.size}")
 
         // 3. A* Search using dynamic graph
         val openSet = PriorityQueue<NodeWrapper>()
@@ -48,7 +51,9 @@ class AStarPathfinder {
             val current = openSet.poll() ?: break
 
             if (current.node.id == goalId) {
-                return reconstructPath(current, allNodes)
+                val path = reconstructPath(current, allNodes)
+                Log.d("AStar", "Path found! Nodes: ${path.size}")
+                return path
             }
 
             val neighbors = visibilityGraph[current.node.id] ?: emptyList()
@@ -67,6 +72,7 @@ class AStarPathfinder {
                 }
             }
         }
+        Log.d("AStar", "No path found.")
         return emptyList()
     }
 
@@ -91,10 +97,7 @@ class AStarPathfinder {
             
             when (layoutPath.type) {
                 "boundary" -> {
-                    // Thick stroke to act as a solid boundary wall
-                    paint.style = Paint.Style.STROKE
-                    paint.strokeWidth = 20f
-                    canvas.drawPath(path, paint)
+                    // Do not draw boundary on mask to avoid blocking nodes placed exactly on the edges
                 }
                 "wall" -> {
                     paint.style = Paint.Style.STROKE
