@@ -22,7 +22,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         val btnSaveSos = view.findViewById<Button>(R.id.btn_save_sos)
         val etSosMessage = view.findViewById<EditText>(R.id.et_sos_message)
 
-        val currentSosMsg = prefs.getString("custom_sos_message", "SkyBeacon:SOS|EMERGENCY ALERT - Please contact airport staff immediately")
+        val currentSosMsg = prefs.getString("custom_sos_message", "SB:SOS|EMERGENCY ALERT - Please contact airport staff immediately")
         etSosMessage.setText(currentSosMsg)
 
         btnSaveSos.setOnClickListener {

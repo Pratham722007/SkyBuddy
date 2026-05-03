@@ -35,7 +35,7 @@
         android:id="@+id/et_sos_message"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="SkyBeacon:SOS|EMERGENCY ALERT..."
+        android:hint="SB:SOS|EMERGENCY ALERT..."
         android:padding="16dp"
         android:background="#FFFFFF"
         android:elevation="2dp"

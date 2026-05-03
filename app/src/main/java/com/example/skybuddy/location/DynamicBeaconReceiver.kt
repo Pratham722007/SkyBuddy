@@ -32,8 +32,8 @@ class DynamicBeaconReceiver @Inject constructor(
                 // Use the advertised device name from the scan record only.
                 // BluetoothDevice.getName() requires BLUETOOTH_CONNECT, which we do not hold.
                 val deviceName = scanRecord.deviceName
-                if (deviceName != null && deviceName.startsWith("SkyBeacon:")) {
-                    val payload = deviceName.removePrefix("SkyBeacon:")
+                if (deviceName != null && deviceName.startsWith("SB:")) {
+                    val payload = deviceName.removePrefix("SB:")
                     val parts = payload.split("|")
                     if (parts.size >= 2) {
                         val locationName = parts[0].trim()

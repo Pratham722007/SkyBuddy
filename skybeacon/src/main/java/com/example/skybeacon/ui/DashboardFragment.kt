@@ -38,7 +38,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         val recentAdapter = LogAdapter(
             onBroadcast = { log ->
                 viewLifecycleOwner.lifecycleScope.launch {
-                    val payload = "SkyBeacon:${log.shopName.replace(" ", "")}|${log.content}".take(26)
+                    val payload = "SB:${log.shopName.replace(" ", "")}|${log.content}".take(61)
                     (requireActivity() as MainActivity).triggerBroadcast(payload)
                     
                     // Also log the re-broadcast

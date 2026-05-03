@@ -82,13 +82,13 @@ class MainActivity : AppCompatActivity() {
         val fabSos = findViewById<FloatingActionButton>(R.id.fab_sos)
         fabSos.setOnClickListener {
             val prefs = getSharedPreferences("skybeacon_prefs", Context.MODE_PRIVATE)
-            val sosMsg = prefs.getString("custom_sos_message", "SkyBeacon:SOS|EMERGENCY ALERT - Please contact airport staff immediately") ?: "SkyBeacon:SOS|EMERGENCY ALERT - Please contact airport staff immediately"
-            
+            val sosMsg = prefs.getString("custom_sos_message", "SB:SOS|EMERGENCY ALERT - Please contact airport staff immediately") ?: "SB:SOS|EMERGENCY ALERT - Please contact airport staff immediately"
+
             AlertDialog.Builder(this)
                 .setTitle("Emergency SOS")
                 .setMessage("Send Emergency Alert to all users?")
                 .setPositiveButton("Confirm") { _, _ ->
-                    triggerBroadcast(sosMsg.take(26))
+                    triggerBroadcast(sosMsg.take(61))
                     
                     lifecycleScope.launch(Dispatchers.IO) {
                         val db = com.example.skybeacon.data.AppDatabase.getDatabase(this@MainActivity)
