@@ -57,7 +57,6 @@ import android.os.Build
 import com.example.skybuddy.core.permission.rememberMultiplePermissionsController
 import com.example.skybuddy.core.permission.rememberPermissionController
 import com.example.skybuddy.ui.flight.ExpandableFlightCard
-import com.example.skybuddy.ui.journey.GlobalStateDropdown
 import com.example.skybuddy.ui.journey.JourneyViewModel
 import com.example.skybuddy.ui.theme.GlassCard
 import com.example.skybuddy.ui.theme.GradientButton
@@ -152,12 +151,6 @@ fun HomeScreen(
             .background(gradients.screenBackground)
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-
-            // ── Journey phase dropdown ──
-            GlobalStateDropdown(
-                viewModel = journeyViewModel,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-            )
 
             // ── Top bar ──
             Row(

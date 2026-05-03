@@ -164,6 +164,29 @@ fun IndoorMapScreen(
                     )
                 }
 
+                // Draw POIs
+                floor?.nodes?.forEach { node ->
+                    val color = when (node.type) {
+                        "CHECKPOINT" -> Color(0xFFE57373)
+                        "SHOP", "RESTAURANT", "CAFE" -> Color(0xFFBA68C8)
+                        "GATE" -> Color(0xFF64B5F6)
+                        "BAGGAGE" -> Color(0xFFFFB74D)
+                        "LIFT" -> Color(0xFF4DB6AC)
+                        "DOOR" -> Color(0xFF81C784)
+                        else -> Color.Gray
+                    }
+                    drawCircle(
+                        color = color.copy(alpha = 0.8f),
+                        radius = 16f,
+                        center = Offset(node.x, node.y)
+                    )
+                    drawCircle(
+                        color = Color.White,
+                        radius = 6f,
+                        center = Offset(node.x, node.y)
+                    )
+                }
+
                 // Draw pathfinding route — gradient path
                 if (uiState.currentPath.size > 1) {
                     val pathPath = Path().apply {
