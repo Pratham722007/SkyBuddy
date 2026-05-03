@@ -10,6 +10,7 @@ import com.example.skybuddy.domain.state.JourneyManager
 import com.example.skybuddy.location.IndoorLocationManager
 import com.example.skybuddy.ui.journey.JourneyPhase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -144,21 +145,29 @@ class IndoorMapViewModel @Inject constructor(
     private fun recalculatePath() {
         val layout = _internalState.value.layout ?: return
         val currentFloor = _internalState.value.currentFloor
+        val goalId = globalGoalId
 
-        if (globalStartId == globalGoalId) {
+        if (globalStartId == globalGoalId || goalId.isEmpty()) {
             _internalState.update { it.copy(currentPath = emptyList()) }
             return
         }
 
-        val path = pathfinder.findPath(layout, currentFloor, globalStartId, globalGoalId)
-        _internalState.update { it.copy(currentPath = path) }
+        val startX = indoorLocationManager.currentX.value
+        val startY = indoorLocationManager.currentY.value
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val path = pathfinder.findPath(layout, currentFloor, startX, startY, goalId)
+            _internalState.update { it.copy(currentPath = path) }
+        }
     }
 
     fun setLocation(x: Float, y: Float) {
         indoorLocationManager.calibratePosition(x, y)
+        recalculatePath()
     }
 
     fun simulateStep() {
         indoorLocationManager.onStepDetected()
+        recalculatePath()
     }
 }
