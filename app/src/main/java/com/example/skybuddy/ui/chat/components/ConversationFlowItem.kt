@@ -3,9 +3,13 @@ package com.example.skybuddy.ui.chat.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -13,12 +17,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.skybuddy.data.db.FlightEntity
 import com.example.skybuddy.data.db.LuggageEntity
 import com.example.skybuddy.data.db.ReceiptEntity
 import com.example.skybuddy.data.db.TimelineEventEntity
 import com.example.skybuddy.ui.flight.FlightSummaryCard
+import com.example.skybuddy.ui.theme.GlassWhite
+import com.example.skybuddy.ui.theme.GlassBorder
+import com.example.skybuddy.ui.theme.LocalSkyBuddyGradients
+import com.example.skybuddy.ui.theme.OnDarkSurfaceDim
+import com.example.skybuddy.ui.theme.SkyTeal
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
@@ -57,7 +69,6 @@ fun ConversationFlowItem(event: TimelineEventEntity) {
             if (receipts != null) ReceiptListCard(receipts)
         }
         "MAP_TOAST" -> {
-            // Render MAP_TOAST card
             MapToastCard(event.content)
         }
     }
@@ -66,6 +77,8 @@ fun ConversationFlowItem(event: TimelineEventEntity) {
 @Composable
 private fun MessageBubble(event: TimelineEventEntity) {
     val isUser = event.role == "USER"
+    val gradients = LocalSkyBuddyGradients.current
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
@@ -73,19 +86,26 @@ private fun MessageBubble(event: TimelineEventEntity) {
         Box(
             modifier = Modifier
                 .widthIn(max = 320.dp)
-                .background(
-                    color = if (isUser) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(16.dp)
+                .clip(
+                    RoundedCornerShape(
+                        topStart = 18.dp,
+                        topEnd = 18.dp,
+                        bottomStart = if (isUser) 18.dp else 4.dp,
+                        bottomEnd = if (isUser) 4.dp else 18.dp
+                    )
+                )
+                .then(
+                    if (isUser) Modifier.background(gradients.userBubble)
+                    else Modifier.background(GlassWhite)
                 )
                 .padding(horizontal = 14.dp, vertical = 10.dp),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.CenterStart
         ) {
             Text(
                 event.content,
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (isUser) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (isUser) Color.White
+                else MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -100,18 +120,27 @@ fun MapToastCard(tip: String) {
         Box(
             modifier = Modifier
                 .widthIn(max = 320.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.tertiaryContainer,
-                    shape = RoundedCornerShape(16.dp)
-                )
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            contentAlignment = Alignment.Center
+                .height(IntrinsicSize.Min)
         ) {
-            Text(
-                "📍 Tip: $tip",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onTertiaryContainer
-            )
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(GlassWhite)
+            ) {
+                // Accent left strip
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .fillMaxHeight()
+                        .background(SkyTeal)
+                )
+                Text(
+                    "📍 Tip: $tip",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                )
+            }
         }
     }
 }
