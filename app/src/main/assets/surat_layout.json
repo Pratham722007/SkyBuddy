@@ -4,46 +4,66 @@
       "level": 0,
       "name": "Ground Floor",
       "paths": [
-        "M 100 100 L 900 100 L 900 900 L 100 900 Z"
+        "M 250 300 L 650 300 L 650 400 L 850 400 L 850 700 L 750 700 L 750 900 L 700 900 L 700 700 L 550 700 L 550 900 L 500 900 L 500 700 L 150 700 L 150 450 L 250 450 Z",
+        "M 350 420 L 850 420 L 850 430 L 350 430 Z",
+        "M 150 530 L 600 530 L 600 540 L 150 540 Z",
+        "M 700 530 L 850 530 L 850 540 L 700 540 Z"
       ],
       "nodes": [
-        { "id": "ENTRANCE", "type": "DOOR", "x": 500, "y": 900 },
-        { "id": "BAGGAGE", "type": "BAGGAGE", "x": 500, "y": 700 },
-        { "id": "SECURITY", "type": "CHECKPOINT", "x": 500, "y": 500 },
-        { "id": "LIFT_G", "type": "LIFT", "x": 200, "y": 500 },
-        { "id": "GATE_1", "type": "GATE", "x": 300, "y": 300 },
-        { "id": "GATE_2", "type": "GATE", "x": 500, "y": 300 },
-        { "id": "GATE_3", "type": "GATE", "x": 700, "y": 300 }
+        { "id": "ENTRANCE", "type": "DOOR", "x": 450, "y": 320 },
+        { "id": "RESTROOM_GF", "type": "RESTROOM", "x": 280, "y": 350 },
+        { "id": "BAGGAGE_DROP", "type": "BAGGAGE", "x": 450, "y": 380 },
+        { "id": "WP_LEFT_GAP", "type": "WAYPOINT", "x": 300, "y": 425 },
+        { "id": "SECURITY_CHECK", "type": "CHECKPOINT", "x": 450, "y": 480 },
+        { "id": "WP_RIGHT_GAP", "type": "WAYPOINT", "x": 650, "y": 535 },
+        { "id": "LIFT_GF", "type": "ELEVATOR", "x": 650, "y": 600 },
+        { "id": "GATE_1", "type": "GATE", "x": 200, "y": 600 },
+        { "id": "GATE_2", "type": "GATE", "x": 525, "y": 850 },
+        { "id": "GATE_3", "type": "GATE", "x": 725, "y": 850 }
       ],
       "edges": [
-        { "from": "ENTRANCE", "to": "BAGGAGE", "distance": 200 },
-        { "from": "BAGGAGE", "to": "SECURITY", "distance": 200 },
-        { "from": "SECURITY", "to": "LIFT_G", "distance": 300 },
-        { "from": "SECURITY", "to": "GATE_1", "distance": 282 },
-        { "from": "SECURITY", "to": "GATE_2", "distance": 200 },
-        { "from": "SECURITY", "to": "GATE_3", "distance": 282 }
+        { "from": "ENTRANCE", "to": "BAGGAGE_DROP", "distance": 60 },
+        { "from": "ENTRANCE", "to": "RESTROOM_GF", "distance": 172 },
+        { "from": "BAGGAGE_DROP", "to": "WP_LEFT_GAP", "distance": 156 },
+        { "from": "WP_LEFT_GAP", "to": "SECURITY_CHECK", "distance": 160 },
+        { "from": "SECURITY_CHECK", "to": "WP_RIGHT_GAP", "distance": 207 },
+        { "from": "WP_RIGHT_GAP", "to": "LIFT_GF", "distance": 65 },
+        { "from": "WP_RIGHT_GAP", "to": "GATE_1", "distance": 454 },
+        { "from": "WP_RIGHT_GAP", "to": "GATE_2", "distance": 338 },
+        { "from": "WP_RIGHT_GAP", "to": "GATE_3", "distance": 323 }
       ]
     },
     {
       "level": 1,
-      "name": "First Floor",
+      "name": "First Floor (Departures)",
       "paths": [
-        "M 100 100 L 900 100 L 900 900 L 100 900 Z"
+        "M 250 300 L 650 300 L 650 400 L 850 400 L 850 700 L 750 700 L 750 900 L 700 900 L 700 700 L 550 700 L 550 900 L 500 900 L 500 700 L 150 700 L 150 450 L 250 450 Z"
       ],
       "nodes": [
-        { "id": "LIFT_1", "type": "LIFT", "x": 200, "y": 500 },
-        { "id": "STARBUCKS", "type": "SHOP", "x": 300, "y": 700 },
-        { "id": "GUJJUS_BISTRO", "type": "RESTAURANT", "x": 500, "y": 700 },
-        { "id": "GATE_4", "type": "GATE", "x": 300, "y": 300 },
-        { "id": "GATE_5", "type": "GATE", "x": 500, "y": 300 },
-        { "id": "GATE_6", "type": "GATE", "x": 700, "y": 300 }
+        { "id": "LIFT_FF", "type": "ELEVATOR", "x": 650, "y": 600 },
+        { "id": "RESTROOM_FF", "type": "RESTROOM", "x": 300, "y": 420 },
+        { "id": "STARBUCKS", "type": "RESTAURANT", "x": 750, "y": 480 },
+        { "id": "KALAMANDIR_JEWELLERS", "type": "SHOP", "x": 670, "y": 480 },
+        { "id": "CHOCOLATE_TRAILS", "type": "SHOP", "x": 590, "y": 480 },
+        { "id": "AVSAR", "type": "SHOP", "x": 510, "y": 480 },
+        { "id": "GUJJUS_BISTRO", "type": "RESTAURANT", "x": 430, "y": 480 },
+        { "id": "SHIVAY_TOUR_TRAVELS", "type": "SHOP", "x": 350, "y": 480 },
+        { "id": "GATE_4", "type": "GATE", "x": 200, "y": 600 },
+        { "id": "GATE_5", "type": "GATE", "x": 525, "y": 850 },
+        { "id": "GATE_6", "type": "GATE", "x": 725, "y": 850 }
       ],
       "edges": [
-        { "from": "LIFT_1", "to": "STARBUCKS", "distance": 223 },
-        { "from": "LIFT_1", "to": "GUJJUS_BISTRO", "distance": 360 },
-        { "from": "LIFT_1", "to": "GATE_4", "distance": 223 },
-        { "from": "LIFT_1", "to": "GATE_5", "distance": 360 },
-        { "from": "LIFT_1", "to": "GATE_6", "distance": 538 }
+        { "from": "LIFT_FF", "to": "KALAMANDIR_JEWELLERS", "distance": 121 },
+        { "from": "LIFT_FF", "to": "CHOCOLATE_TRAILS", "distance": 134 },
+        { "from": "LIFT_FF", "to": "STARBUCKS", "distance": 156 },
+        { "from": "KALAMANDIR_JEWELLERS", "to": "CHOCOLATE_TRAILS", "distance": 80 },
+        { "from": "CHOCOLATE_TRAILS", "to": "AVSAR", "distance": 80 },
+        { "from": "AVSAR", "to": "GUJJUS_BISTRO", "distance": 80 },
+        { "from": "GUJJUS_BISTRO", "to": "SHIVAY_TOUR_TRAVELS", "distance": 80 },
+        { "from": "SHIVAY_TOUR_TRAVELS", "to": "RESTROOM_FF", "distance": 78 },
+        { "from": "LIFT_FF", "to": "GATE_4", "distance": 450 },
+        { "from": "LIFT_FF", "to": "GATE_5", "distance": 279 },
+        { "from": "LIFT_FF", "to": "GATE_6", "distance": 261 }
       ]
     }
   ]

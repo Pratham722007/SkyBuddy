@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -51,6 +52,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.input.pointer.pointerInput
@@ -185,6 +187,19 @@ fun IndoorMapScreen(
                         radius = 6f,
                         center = Offset(node.x, node.y)
                     )
+                    val label = node.id.replace("_", " ")
+                    val paint = android.graphics.Paint().apply {
+                        this.color = android.graphics.Color.WHITE
+                        textSize = 28f
+                        textAlign = android.graphics.Paint.Align.CENTER
+                        isAntiAlias = true
+                    }
+                    drawContext.canvas.nativeCanvas.drawText(
+                        label,
+                        node.x,
+                        node.y + 40f,
+                        paint
+                    )
                 }
 
                 // Draw pathfinding route — gradient path
@@ -292,6 +307,27 @@ fun IndoorMapScreen(
                         .align(Alignment.TopCenter)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 )
+
+                // Floor Switcher
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(16.dp)
+                ) {
+                    uiState.layout?.floors?.forEach { floor ->
+                        val isSelected = uiState.currentFloor == floor.level
+                        FloatingActionButton(
+                            onClick = { viewModel.setFloor(floor.level) },
+                            containerColor = if (isSelected) SkyBlue else MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.padding(bottom = 10.dp).size(48.dp)
+                        ) {
+                            Text(
+                                text = "F${floor.level}",
+                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
 
                 Column(
                     modifier = Modifier
