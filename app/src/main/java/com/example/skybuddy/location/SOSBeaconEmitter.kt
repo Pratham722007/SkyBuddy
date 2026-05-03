@@ -45,7 +45,10 @@ class SOSBeaconEmitter @Inject constructor(
         if (!adapter.isEnabled) return
         advertiser = adapter.bluetoothLeAdvertiser ?: return
 
-        if (isAdvertising) stopSOS()
+        // Always stop first — isAdvertising is set asynchronously by the
+        // callback, so checking it can miss in-progress advertisements.
+        try { advertiser?.stopAdvertising(advertiseCallback) } catch (_: SecurityException) {}
+        isAdvertising = false
 
         // Build payload within 61-char BLE name limit
         var payload = "SBSOS:$type"
