@@ -49,6 +49,7 @@ class IngestFlightUseCase @Inject constructor(
             val prompt = """
                 Extract the following details from this boarding pass barcode string and return ONLY a valid JSON object. 
                 Do not include markdown or extra text.
+                IMPORTANT: Do NOT confuse the passenger's name with the airline name.
                 Format:
                 {
                   "flightNumber": "XX123",
@@ -60,7 +61,7 @@ class IngestFlightUseCase @Inject constructor(
                   "time": "14:30"
                 }
                 
-                Barcode Text: $rawBarcodeText
+                Barcode Text: ${'$'}rawBarcodeText
             """.trimIndent()
 
             val llmResponse = llmEngine.generateText(prompt)
