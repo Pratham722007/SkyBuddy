@@ -45,19 +45,24 @@ class IngestFlightUseCase @Inject constructor(
 
     private suspend fun processBarcodeText(rawBarcodeText: String): Result<FlightEntity> {
         return try {
+            val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+            val currentDate = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
             // Use the LLM to format the barcode text into a JSON
             val prompt = """
-                Extract the following details from this boarding pass barcode string and return ONLY a valid JSON object. 
-                Do not include markdown or extra text.
-                Format:
+                You are a data extraction tool. Extract the following details from this boarding pass barcode string and return ONLY a valid JSON object. 
+                Do NOT use the example values. Replace them with the actual data extracted from the barcode text.
+                Today's date is $currentDate. The barcode usually contains a Julian date (e.g., 124 means the 124th day of the year). Calculate the exact YYYY-MM-DD date using the current year ($currentYear). If the departure date has already passed for the current year (e.g. it's December and the flight is in January), assume it is for the next year.
+                
+                Expected JSON Format:
                 {
-                  "flightNumber": "XX123",
-                  "airline": "Airline Name",
-                  "origin": "ABC",
-                  "destination": "XYZ",
-                  "gate": "A1",
-                  "seat": "12A",
-                  "time": "14:30"
+                  "flightNumber": "extracted flight number (e.g. AI101)",
+                  "airline": "extracted airline name",
+                  "origin": "extracted origin IATA code",
+                  "destination": "extracted destination IATA code",
+                  "gate": "extracted gate (or TBD)",
+                  "seat": "extracted seat (e.g. 12A)",
+                  "date": "calculated YYYY-MM-DD date",
+                  "time": "extracted departure time (HH:mm) or Unknown"
                 }
                 
                 Barcode Text: $rawBarcodeText
@@ -69,13 +74,16 @@ class IngestFlightUseCase @Inject constructor(
             val jsonString = llmResponse.substringAfter("{").substringBeforeLast("}")
             val json = JSONObject("{$jsonString}")
             
-            val flightNumber = json.optString("flightNumber", "UNKNOWN").uppercase()
+            val flightNumber = json.optString("flightNumber", "UNKNOWN").uppercase().replace("\\s+".toRegex(), "").replace("/", "")
             val airline = json.optString("airline", "Unknown")
             val origin = json.optString("origin", "Unknown")
             val destination = json.optString("destination", "Unknown")
             val gate = json.optString("gate", "TBD")
             val seat = json.optString("seat", "TBD")
+            val date = json.optString("date", "")
             val time = json.optString("time", "Unknown")
+            
+            val fullTime = if (date.isNotBlank() && time != "Unknown") "$date $time" else time
 
             val flight = FlightEntity(
                 flightNumber = flightNumber,
@@ -90,7 +98,7 @@ class IngestFlightUseCase @Inject constructor(
                 time = time,
                 seat = seat,
                 lastSyncedAt = clock.nowMillis(),
-                departureTimeEpoch = parseDepartureEpoch(time, clock.nowMillis()),
+                departureTimeEpoch = parseDepartureEpoch(fullTime, clock.nowMillis()),
                 trackingState = TrackingState.TRACKING.name
             )
 

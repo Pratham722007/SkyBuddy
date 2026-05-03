@@ -10,9 +10,9 @@ object Routes {
     const val CHAT_PATTERN = "chat/{flightNumber}"
     const val FLIGHT_INFO_PATTERN = "flight_info/{flightNumber}"
 
-    fun journeySelect(flightNumber: String): String = "journey_select/$flightNumber"
-    fun homePhase(flightNumber: String, departureEpoch: Long): String = "home_phase/$flightNumber/$departureEpoch"
-    fun indoorMap(flightNumber: String): String = "indoor_map/$flightNumber"
-    fun chat(flightNumber: String): String = "chat/$flightNumber"
-    fun flightInfo(flightNumber: String): String = "flight_info/$flightNumber"
+    fun journeySelect(flightNumber: String): String = "journey_select/${android.net.Uri.encode(flightNumber)}"
+    fun homePhase(flightNumber: String, departureEpoch: Long): String = "home_phase/${android.net.Uri.encode(flightNumber)}/$departureEpoch"
+    fun indoorMap(flightNumber: String): String = "indoor_map/${android.net.Uri.encode(flightNumber)}"
+    fun chat(flightNumber: String): String = "chat/${android.net.Uri.encode(flightNumber)}"
+    fun flightInfo(flightNumber: String): String = "flight_info/${android.net.Uri.encode(flightNumber)}"
 }

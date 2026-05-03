@@ -29,8 +29,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -39,7 +41,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -72,6 +78,7 @@ import com.example.skybuddy.ui.vault.DatabaseViewerDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onFlightTapped: (String) -> Unit,
@@ -177,23 +184,49 @@ fun HomeScreen(
                         ),
                         color = OnSurfaceDark
                     )
-                    // Saved badge
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(PrimaryPurple)
-                            .clickable { showVault = true }
-                            .padding(horizontal = 14.dp, vertical = 6.dp)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Filled.BookmarkBorder,
-                                contentDescription = "Saved",
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text("Saved", style = MaterialTheme.typography.labelMedium, color = Color.White)
+                        // Refresh button
+                        IconButton(
+                            onClick = { viewModel.refreshAll() },
+                            enabled = !ui.isRefreshing,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            if (ui.isRefreshing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    color = PrimaryPurple,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Filled.Refresh,
+                                    contentDescription = "Refresh",
+                                    tint = PrimaryPurple,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                        // Saved badge
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(PrimaryPurple)
+                                .clickable { showVault = true }
+                                .padding(horizontal = 14.dp, vertical = 6.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Filled.BookmarkBorder,
+                                    contentDescription = "Saved",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text("Saved", style = MaterialTheme.typography.labelMedium, color = Color.White)
+                            }
                         }
                     }
                 }
@@ -426,10 +459,37 @@ fun HomeScreen(
                 SectionHeader("Upcoming Flights")
             }
             items(upcoming, key = { it.flightNumber }) { flight ->
-                ExpandableFlightCard(
-                    flight = flight,
-                    onClick = { onFlightTapped(flight.flightNumber) }
+                val dismissState = rememberSwipeToDismissBoxState(
+                    confirmValueChange = {
+                        if (it == SwipeToDismissBoxValue.EndToStart) {
+                            viewModel.deleteFlight(flight.flightNumber)
+                            true
+                        } else false
+                    },
+                    positionalThreshold = { totalDistance -> totalDistance * 0.6f }
                 )
+                SwipeToDismissBox(
+                    state = dismissState,
+                    enableDismissFromStartToEnd = false,
+                    backgroundContent = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(vertical = 8.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(MaterialTheme.colorScheme.error)
+                                .padding(horizontal = 24.dp),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = Color.White)
+                        }
+                    }
+                ) {
+                    ExpandableFlightCard(
+                        flight = flight,
+                        onClick = { onFlightTapped(flight.flightNumber) }
+                    )
+                }
             }
         }
 
@@ -439,10 +499,37 @@ fun HomeScreen(
                 SectionHeader("Past Flights")
             }
             items(past, key = { it.flightNumber }) { flight ->
-                ExpandableFlightCard(
-                    flight = flight,
-                    onClick = { onFlightTapped(flight.flightNumber) }
+                val dismissState = rememberSwipeToDismissBoxState(
+                    confirmValueChange = {
+                        if (it == SwipeToDismissBoxValue.EndToStart) {
+                            viewModel.deleteFlight(flight.flightNumber)
+                            true
+                        } else false
+                    },
+                    positionalThreshold = { totalDistance -> totalDistance * 0.6f }
                 )
+                SwipeToDismissBox(
+                    state = dismissState,
+                    enableDismissFromStartToEnd = false,
+                    backgroundContent = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(vertical = 8.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(MaterialTheme.colorScheme.error)
+                                .padding(horizontal = 24.dp),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = Color.White)
+                        }
+                    }
+                ) {
+                    ExpandableFlightCard(
+                        flight = flight,
+                        onClick = { onFlightTapped(flight.flightNumber) }
+                    )
+                }
             }
         }
 

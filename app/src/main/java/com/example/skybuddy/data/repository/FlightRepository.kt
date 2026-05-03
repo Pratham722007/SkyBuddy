@@ -48,6 +48,17 @@ class FlightRepository @Inject constructor(
         flightDao.upsert(flight)
     }
 
+    suspend fun deleteFlight(flightNumber: String) = withContext(io) {
+        flightDao.delete(flightNumber.uppercase())
+    }
+
+    /** Mark flights that have already departed as COMPLETED. */
+    suspend fun completePastFlights() = withContext(io) {
+        // 6 hours after departure time → considered completed
+        val cutoff = clock.nowMillis() - (6 * 60 * 60 * 1000)
+        flightDao.completePastFlights(cutoff)
+    }
+
     suspend fun refresh(flightNumber: String): AppResult<FlightEntity> = withContext(io) {
         val number = flightNumber.uppercase()
         val apiKey = BuildConfig.AIRLABS_API_KEY
@@ -87,9 +98,9 @@ class FlightRepository @Inject constructor(
                 terminal = schedule.depTerminal ?: "TBD",
                 status = statusStr,
                 time = schedule.depTime ?: "Unknown",
-                seat = "Unknown",
+                seat = existingSeat(number),
                 lastSyncedAt = clock.nowMillis(),
-                departureTimeEpoch = schedule.depTimeTs?.let { it * 1000L } ?: parseDepartureEpoch(schedule.depTimeUtc ?: schedule.depTime),
+                departureTimeEpoch = parseDepartureEpoch(schedule.depTime),
                 trackingState = state.name
             )
             flightDao.upsert(flight)
@@ -129,6 +140,13 @@ class FlightRepository @Inject constructor(
         flightNumber.startsWith("QP", true) -> "Akasa Air"
         flightNumber.startsWith("I5", true) -> "AIX Connect"
         else -> flightNumber.take(2).uppercase()
+    }
+
+    /** Preserve existing seat if it was previously set (e.g. from boarding pass scan). */
+    private suspend fun existingSeat(flightNumber: String): String {
+        val existing = flightDao.getFlight(flightNumber)?.seat
+        return if (!existing.isNullOrBlank() && !existing.equals("Unknown", true)) existing
+        else "Unknown"
     }
 
     companion object { private const val TAG = "FlightRepository" }

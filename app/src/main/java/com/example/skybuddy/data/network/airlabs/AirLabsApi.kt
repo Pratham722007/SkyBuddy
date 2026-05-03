@@ -18,8 +18,6 @@ data class AirLabsSchedule(
     @Json(name = "dep_terminal") val depTerminal: String?,
     @Json(name = "dep_gate") val depGate: String?,
     @Json(name = "dep_time") val depTime: String?,
-    @Json(name = "dep_time_utc") val depTimeUtc: String?,
-    @Json(name = "dep_time_ts") val depTimeTs: Long?,
     @Json(name = "arr_iata") val arrIata: String?,
     @Json(name = "arr_terminal") val arrTerminal: String?,
     @Json(name = "arr_gate") val arrGate: String?,

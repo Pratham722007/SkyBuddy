@@ -42,13 +42,29 @@ class ChatTurnUseCase @Inject constructor(
     }
 
     private suspend fun withFlightContext(prompt: String, flightNumber: String?): String {
-        if (flightNumber.isNullOrBlank()) return prompt
-        val flight = flightRepository.getFlight(flightNumber) ?: return prompt
+        val systemPrompt = buildString {
+            appendLine("[SYSTEM: You are SkyBuddy, a helpful airport travel assistant specializing in Surat Airport (STV). Be concise, friendly, and precise. Never use emojis.]")
+        }
+        if (flightNumber.isNullOrBlank()) return "$systemPrompt\n$prompt"
+        val flight = flightRepository.getFlight(flightNumber) ?: return "$systemPrompt\n$prompt"
         val seatKnown = flight.seat.isNotBlank() && !flight.seat.equals("Unknown", true)
         val seatNote = if (seatKnown) "seat ${flight.seat}"
         else "seat is UNKNOWN — politely ask the user to upload a boarding pass photo or tell you their seat, then call setMySeat to save it"
-        val context = "[Active flight: ${flight.flightNumber}, ${flight.airline}, gate ${flight.gate}, terminal ${flight.terminal}, status ${flight.status}, $seatNote.]"
-        return "$context\n$prompt"
+        val flightContext = buildString {
+            append("[Active flight: ${flight.flightNumber}")
+            append(", ${flight.airline}")
+            append(", ${flight.origin} -> ${flight.destination}")
+            if (flight.originCity.isNotBlank() && !flight.originCity.equals("Unknown", true)) {
+                append(" (${flight.originCity} -> ${flight.destCity})")
+            }
+            append(", departure: ${flight.time}")
+            append(", gate: ${flight.gate}")
+            append(", terminal: ${flight.terminal}")
+            append(", status: ${flight.status}")
+            append(", $seatNote")
+            append("]")
+        }
+        return "$systemPrompt\n$flightContext\n$prompt"
     }
 
     private suspend fun collectSideEffects(response: String, activeFlightNumber: String?): ChatTurnResult {

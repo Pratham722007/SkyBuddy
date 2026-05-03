@@ -31,4 +31,10 @@ interface FlightDao {
 
     @Query("UPDATE flights SET seat = :seat WHERE flightNumber = :flightNumber")
     suspend fun updateSeat(flightNumber: String, seat: String)
+
+    @Query("DELETE FROM flights WHERE flightNumber = :flightNumber")
+    suspend fun delete(flightNumber: String)
+
+    @Query("UPDATE flights SET trackingState = 'COMPLETED' WHERE trackingState = 'TRACKING' AND departureTimeEpoch > 0 AND departureTimeEpoch < :cutoffMillis")
+    suspend fun completePastFlights(cutoffMillis: Long)
 }

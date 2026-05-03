@@ -21,13 +21,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-enum class FlightTab { ARRIVAL, DEPARTURE }
-
 data class HomeUiState(
     val input: String = "",
     val isAdding: Boolean = false,
-    val message: String? = null,
-    val selectedTab: FlightTab = FlightTab.DEPARTURE
+    val isRefreshing: Boolean = false,
+    val message: String? = null
 )
 
 @HiltViewModel
@@ -46,9 +44,12 @@ class HomeViewModel @Inject constructor(
     val past: StateFlow<List<FlightEntity>> = flightRepository.observePast()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun onInputChanged(value: String) = _ui.update { it.copy(input = value) }
+    init {
+        // Auto-complete past flights on startup
+        viewModelScope.launch { flightRepository.completePastFlights() }
+    }
 
-    fun onTabSelected(tab: FlightTab) = _ui.update { it.copy(selectedTab = tab) }
+    fun onInputChanged(value: String) = _ui.update { it.copy(input = value) }
 
     suspend fun ingestFlight(context: Context, uri: Uri): Result<FlightEntity> {
         _ui.update { it.copy(isAdding = true, message = "Ingesting boarding pass...") }
@@ -93,6 +94,25 @@ class HomeViewModel @Inject constructor(
                 }
             }
             _ui.update { it.copy(isAdding = false, input = "", message = message) }
+        }
+    }
+
+    fun refreshAll() {
+        _ui.update { it.copy(isRefreshing = true) }
+        viewModelScope.launch {
+            flightRepository.completePastFlights()
+            val allTracked = flightRepository.getAll()
+            allTracked.forEach { flight ->
+                try { flightRepository.refresh(flight.flightNumber) } catch (_: Exception) {}
+            }
+            _ui.update { it.copy(isRefreshing = false, message = "Flights refreshed") }
+        }
+    }
+
+    fun deleteFlight(flightNumber: String) {
+        viewModelScope.launch {
+            flightRepository.deleteFlight(flightNumber)
+            _ui.update { it.copy(message = "Flight $flightNumber removed") }
         }
     }
 

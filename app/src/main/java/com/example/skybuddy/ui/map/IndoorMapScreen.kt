@@ -13,6 +13,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -133,23 +134,44 @@ fun IndoorMapScreen(
             val centerMapX = (canvasWidth / 2) - (uiState.currentX * scale)
             val centerMapY = (canvasHeight / 2) - (uiState.currentY * scale)
 
-            Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFF0D1117))
-                    .pointerInput(Unit) {
-                        detectTransformGestures { _, pan, zoom, _ ->
-                            scale = (scale * zoom).coerceIn(0.5f, 5f)
-                            offset += pan
-                        }
-                    }
-                    .graphicsLayer(
-                        scaleX = scale,
-                        scaleY = scale,
-                        translationX = centerMapX + offset.x,
-                        translationY = centerMapY + offset.y
+            val layout = uiState.layout
+            if (layout == null || layout.floors.isEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = null,
+                        tint = Color.Gray.copy(alpha = 0.5f),
+                        modifier = Modifier.size(64.dp)
                     )
-            ) {
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "Indoor map not available",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.Gray
+                    )
+                }
+            } else {
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFF0D1117))
+                        .pointerInput(Unit) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                scale = (scale * zoom).coerceIn(0.5f, 5f)
+                                offset += pan
+                            }
+                        }
+                        .graphicsLayer(
+                            scaleX = scale,
+                            scaleY = scale,
+                            translationX = centerMapX + offset.x,
+                            translationY = centerMapY + offset.y
+                        )
+                ) {
                 // Draw map layout — typed paths
                 val floor = uiState.layout?.floors?.find { it.level == uiState.currentFloor }
                 floor?.paths?.forEach { layoutPath ->
@@ -306,6 +328,7 @@ fun IndoorMapScreen(
                     center = Offset(uiState.currentX, uiState.currentY)
                 )
             }
+            } // Close else block
 
             if (isVisualCalibrationMode) {
                 Icon(
