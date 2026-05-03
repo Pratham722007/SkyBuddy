@@ -36,6 +36,12 @@ class VoiceController @Inject constructor(
 
     fun speak(text: String) = tts.speak(text)
 
+    /** Queue text after the current utterance (for line-by-line streaming TTS). */
+    fun speakQueued(text: String) = tts.speakQueued(text)
+
+    /** Stop any current and queued speech. */
+    fun stopSpeaking() = tts.stop()
+
     fun consume() { _events.value = null }
 
     fun shutdown() {

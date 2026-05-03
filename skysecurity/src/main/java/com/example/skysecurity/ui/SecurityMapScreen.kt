@@ -181,8 +181,8 @@ fun SecurityMapScreen(
                     }
                     .graphicsLayer(
                         scaleX = scale, scaleY = scale,
-                        translationX = (cw / 2) - (uiState.currentX * scale) + offset.x,
-                        translationY = (ch / 2) - (uiState.currentY * scale) + offset.y
+                        translationX = (cw / 2f - uiState.currentX) * scale + offset.x,
+                        translationY = (ch / 2f - uiState.currentY) * scale + offset.y
                     )
             ) {
                 val floor = uiState.layout?.floors?.find { it.level == uiState.currentFloor }

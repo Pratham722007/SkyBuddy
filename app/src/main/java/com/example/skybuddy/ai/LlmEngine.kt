@@ -17,6 +17,7 @@ interface LlmEngine {
     val isReady: Boolean
     fun initialize(preferred: Backend? = null): Flow<InitState>
     suspend fun generateText(prompt: String): String
+    fun generateTextStreaming(prompt: String): Flow<String>
     suspend fun generateOneOffText(prompt: String): String
     suspend fun generateMultimodal(prompt: String, bitmap: Bitmap): String
     fun close()

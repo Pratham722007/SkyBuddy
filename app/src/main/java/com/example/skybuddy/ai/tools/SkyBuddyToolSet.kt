@@ -1,5 +1,6 @@
 package com.example.skybuddy.ai.tools
 
+import androidx.annotation.Keep
 import com.example.skybuddy.data.repository.FlightRepository
 import com.example.skybuddy.data.repository.LuggageRepository
 import com.example.skybuddy.data.repository.ReceiptRepository
@@ -14,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@Keep
 @Singleton
 class SkyBuddyToolSet @Inject constructor(
     private val flightRepository: FlightRepository,
@@ -52,11 +54,31 @@ class SkyBuddyToolSet @Inject constructor(
     /** Fires the UI callback with a human-readable status label. */
     private fun notifyTool(label: String) = onToolStarted?.invoke(label)
 
-    @Tool(description = "Save a detailed visual description of the user's checked luggage. The active flight is known automatically. Use this when the user shows a picture of their bag and wants you to remember it.")
+    @Keep
+    @Tool(description = "Search the Bangalore Airport (BLR) database for food, shops, and services. Use this for ANY question about what is available at the airport.")
+    fun search(
+        @ToolParam(description = "The search query, e.g. 'coffee' or 'pharmacy'.")
+        query: String
+    ): String = bridge {
+        android.util.Log.d("SkyBuddy", "Tool: searchAirport($query)")
+        notifyTool("🔍 Searching airport database...")
+        try {
+            val res = airportKb.search(query = query, topK = 5)
+            android.util.Log.d("SkyBuddy", "Tool: searchAirport result length: ${res.length}")
+            res
+        } catch (e: Exception) {
+            android.util.Log.e("SkyBuddy", "Error in searchAirport: ", e)
+            "{\"error\": \"Search failed\", \"pois\": []}"
+        }
+    }
+
+    @Keep
+    @Tool(description = "Save a detailed visual description of the user's checked luggage.")
     fun saveBag(
-        @ToolParam(description = "A detailed 1-2 sentence description of the bag based on the image provided.")
+        @ToolParam(description = "A detailed description of the bag.")
         description: String
     ): String = bridge {
+        android.util.Log.d("SkyBuddy", "Tool: saveBag")
         notifyTool("🧳 Saving bag description...")
         didQueryLuggage = true
         luggageRepository.save(description, activeFlightNumber)
@@ -64,18 +86,22 @@ class SkyBuddyToolSet @Inject constructor(
         else "SUCCESS: Bag saved."
     }
 
-    @Tool(description = "Retrieve the saved visual description of the user's checked luggage for the active flight. Use this when the user asks what their bag looks like or says they lost their bag.")
+    @Keep
+    @Tool(description = "Retrieve the saved visual description of the user's checked luggage.")
     fun getBagDescription(): Map<String, String> = bridge {
+        android.util.Log.d("SkyBuddy", "Tool: getBagDescription")
         notifyTool("🧳 Looking up bag description...")
         didQueryLuggage = true
         val bag = activeFlightNumber?.let { luggageRepository.latestForFlight(it) }
             ?: luggageRepository.latest()
         if (bag != null) mapOf("description" to bag.description)
-        else mapOf("error" to "No bag saved for this flight.")
+        else mapOf("error" to "No bag saved.")
     }
 
-    @Tool(description = "Retrieve the saved expense receipts for the active flight. Use this when the user asks about their expenses for this trip.")
+    @Keep
+    @Tool(description = "Retrieve the saved expense receipts for the active flight.")
     fun getReceipts(): List<Map<String, String>> = bridge {
+        android.util.Log.d("SkyBuddy", "Tool: getReceipts")
         notifyTool("🧾 Fetching expense receipts...")
         didQueryReceipts = true
         val rows = activeFlightNumber?.let { receiptRepository.allForFlight(it) }
@@ -89,10 +115,12 @@ class SkyBuddyToolSet @Inject constructor(
         }
     }
 
-    @Tool(description = "Get real-time status, gate, terminal, time and seat for the active flight. The flight is known from the chat context.")
+    @Keep
+    @Tool(description = "Get real-time status, gate, terminal, and seat for the active flight.")
     fun getFlightStatus(): Map<String, Any> = bridge {
+        android.util.Log.d("SkyBuddy", "Tool: getFlightStatus")
         notifyTool("✈️ Checking flight status...")
-        val number = activeFlightNumber ?: return@bridge mapOf("error" to "No active flight in this chat.")
+        val number = activeFlightNumber ?: return@bridge mapOf("error" to "No active flight.")
         didTouchFlight = true
         val entity = flightRepository.getFlight(number)
         if (entity != null) mapOf(
@@ -103,14 +131,16 @@ class SkyBuddyToolSet @Inject constructor(
             "time" to entity.time,
             "airline" to entity.airline,
             "seat" to entity.seat
-        ) else mapOf("error" to "Flight $number not found in database.")
+        ) else mapOf("error" to "Flight not found.")
     }
 
-    @Tool(description = "Check if the user has lounge access in the active flight's terminal based on their credit card.")
+    @Keep
+    @Tool(description = "Check if the user has lounge access based on their credit card.")
     fun checkLoungeAccess(
-        @ToolParam(description = "The credit card name, e.g. Amex Platinum or Chase Sapphire")
+        @ToolParam(description = "The credit card name.")
         creditCard: String
     ): String = bridge {
+        android.util.Log.d("SkyBuddy", "Tool: checkLoungeAccess($creditCard)")
         notifyTool("🏙️ Checking lounge access...")
         val terminal = activeFlightNumber
             ?.let { flightRepository.getFlight(it) }
@@ -120,71 +150,55 @@ class SkyBuddyToolSet @Inject constructor(
             creditCard.contains("Amex", ignoreCase = true) ||
                 creditCard.contains("Platinum", ignoreCase = true) ||
                 creditCard.contains("Centurion", ignoreCase = true) ->
-                "Yes, you have access to the Centurion Lounge in $terminal. It is a 5-minute walk from the central concourse."
+                "Yes, you have access to the Centurion Lounge in $terminal."
             creditCard.contains("Chase", ignoreCase = true) ||
                 creditCard.contains("Sapphire", ignoreCase = true) ||
                 creditCard.contains("Priority Pass", ignoreCase = true) ->
-                "Yes, you have access to the Sapphire Lounge in $terminal. It is located near the food court."
-            else -> "No, your $creditCard does not typically provide lounge access in $terminal."
+                "Yes, you have access to the Sapphire Lounge in $terminal."
+            else -> "No, $creditCard does not typically provide access in $terminal."
         }
     }
 
-    @Tool(description = "Check seat details and comfort information for the user's seat on the active flight. Reads the seat from the active flight context.")
+    @Keep
+    @Tool(description = "Check seat details and comfort information for the user's seat.")
     fun checkSeatDetails(): String = bridge {
+        android.util.Log.d("SkyBuddy", "Tool: checkSeatDetails")
         notifyTool("💺 Looking up seat details...")
         val number = activeFlightNumber ?: return@bridge "No active flight."
         val seat = flightRepository.getFlight(number)?.seat
         if (seat.isNullOrBlank() || seat.equals("Unknown", true)) {
-            "Seat is not yet known. Ask the user to upload a boarding pass photo or tell their seat number, then call setMySeat."
+            "Seat is not yet known. Call setMySeat to save it."
         } else describeSeat(seat)
     }
 
-    @Tool(description = "Save the user's seat number on the active flight. Use this after the user tells you their seat or after parsing it from a boarding pass image.")
+    @Keep
+    @Tool(description = "Save the user's seat number on the active flight.")
     fun setMySeat(
-        @ToolParam(description = "The seat number, e.g. 12A, 4C, 27F.")
+        @ToolParam(description = "The seat number, e.g. 12A.")
         seatNumber: String
     ): String = bridge {
+        android.util.Log.d("SkyBuddy", "Tool: setMySeat($seatNumber)")
         notifyTool("💺 Saving seat number...")
-        val number = activeFlightNumber ?: return@bridge "No active flight to update."
+        val number = activeFlightNumber ?: return@bridge "No active flight."
         val seat = seatNumber.trim().uppercase()
-        if (!seat.matches(Regex("^\\d{1,3}[A-K]$"))) return@bridge "Seat '$seatNumber' does not look like a valid seat number."
         flightRepository.updateSeat(number, seat)
         didTouchFlight = true
-        "SUCCESS: Seat $seat saved for flight $number."
+        "SUCCESS: Seat saved."
     }
 
-    @Tool(description = "Save an expense receipt for the active flight. Use this when the user provides an image or details of a receipt.")
+    @Keep
+    @Tool(description = "Save an expense receipt for the active flight.")
     fun saveReceipt(
-        @ToolParam(description = "The vendor or restaurant name on the receipt.") vendor: String,
-        @ToolParam(description = "The total amount paid.") amount: String,
-        @ToolParam(description = "The currency of the transaction, e.g. USD or EUR.") currency: String
+        @ToolParam(description = "The vendor name.") vendor: String,
+        @ToolParam(description = "The amount.") amount: String,
+        @ToolParam(description = "The currency.") currency: String
     ): String = bridge {
+        android.util.Log.d("SkyBuddy", "Tool: saveReceipt($vendor, $amount, $currency)")
         notifyTool("🧾 Saving receipt from $vendor...")
         didQueryReceipts = true
         receiptRepository.save(vendor, amount, currency, activeFlightNumber)
-        if (activeFlightNumber != null) "SUCCESS: Receipt saved for flight $activeFlightNumber."
-        else "SUCCESS: Receipt saved."
+        "SUCCESS: Receipt saved."
     }
-
-    @Tool(
-        description = "Fuzzy-searches the Kempegowda International Airport (BLR) knowledge base. " +
-            "Returns restaurants, cafes, shops, lounges, services, menus, timings, gate proximity, and location data. " +
-            "Call this whenever the user asks ANYTHING about food, drinks, shopping, facilities, " +
-            "gate proximity, open hours, specific menu items, or prices at Bangalore airport."
-    )
-    fun searchAirportKb(
-        @ToolParam(description = "Natural-language query, e.g. 'South Indian breakfast near Gate 12', 'open coffee shop', 'veg food after security T2'")
-        query: String
-    ): String = bridge {
-        notifyTool("🔍 Searching airport knowledge base...")
-        try {
-            airportKb.search(query = query, topK = 5)
-        } catch (e: Exception) {
-            android.util.Log.e("SkyBuddy", "Error in searchAirportKb: ", e)
-            "{\"error\": \"Airport KB search failed: ${e.message}\", \"query\": \"$query\", \"pois\": [], \"services\": [], \"totalMatches\": 0}"
-        }
-    }
-
 
     private fun describeSeat(seat: String): String = when {
         seat.endsWith("A") || seat.endsWith("F") ->
@@ -195,12 +209,17 @@ class SkyBuddyToolSet @Inject constructor(
     }
 
     private fun <T> bridge(block: suspend () -> T): T = runBlocking {
-        withTimeout(TOOL_TIMEOUT_MS) {
-            withContext(Dispatchers.IO) { block() }
+        android.util.Log.d("SkyBuddy", "Tool bridge: entering")
+        try {
+            withTimeout(TOOL_TIMEOUT_MS) {
+                withContext(Dispatchers.IO) { block() }
+            }
+        } finally {
+            android.util.Log.d("SkyBuddy", "Tool bridge: exiting")
         }
     }
 
     companion object {
-        private const val TOOL_TIMEOUT_MS = 5_000L
+        private const val TOOL_TIMEOUT_MS = 15_000L
     }
 }

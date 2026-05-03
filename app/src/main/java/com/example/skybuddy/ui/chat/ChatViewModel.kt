@@ -30,8 +30,11 @@ data class ChatUiState(
     val input: String = "",
     val isThinking: Boolean = false,
     val isIntercomMode: Boolean = false,
-    // Non-null while a tool call is in-flight; shown in the chat as a status pill
-    val toolStatusLabel: String? = null
+    val toolStatusLabel: String? = null,
+    /** Accumulated tokens shown during streaming. */
+    val streamingResponse: String = "",
+    /** True while the LLM is emitting tokens. */
+    val isStreamingResponse: Boolean = false
 )
 
 @HiltViewModel
@@ -55,9 +58,12 @@ class ChatViewModel @Inject constructor(
     val state: StateFlow<ChatUiState> = _state.asStateFlow()
 
     private var pinnedFlightNumber: String? = null
-
     private val _pinnedFlight = MutableStateFlow<FlightEntity?>(null)
     val pinnedFlight: StateFlow<FlightEntity?> = _pinnedFlight.asStateFlow()
+
+    // TTS tracking
+    private var ttsSpokenUpTo = 0
+    private var streamingTtsHandledTurn = false
 
     fun setFlightContext(flightNumber: String?) {
         if (flightNumber.isNullOrBlank() || flightNumber == "help" || flightNumber == "timeline") return
@@ -71,9 +77,8 @@ class ChatViewModel @Inject constructor(
     }
 
     fun onInputChanged(value: String) = _state.update { it.copy(input = value) }
-
     fun toggleIntercom() = _state.update { it.copy(isIntercomMode = !it.isIntercomMode) }
-    
+
     private fun getSpatialContext(): String {
         val x = indoorLocationManager.currentX.value
         val y = indoorLocationManager.currentY.value
@@ -81,10 +86,35 @@ class ChatViewModel @Inject constructor(
         return "[SYSTEM CONTEXT: User is at X:$x, Y:$y. State is $phase.]"
     }
 
+    private fun speakNewLinesIfNeeded(text: String) {
+        if (!_state.value.isIntercomMode) return
+        while (true) {
+            val nl = text.indexOf('\n', ttsSpokenUpTo)
+            if (nl == -1) break
+            val line = text.substring(ttsSpokenUpTo, nl).trim()
+            if (line.isNotEmpty()) {
+                if (ttsSpokenUpTo == 0) voiceController.speak(line)
+                else voiceController.speakQueued(line)
+            }
+            ttsSpokenUpTo = nl + 1
+        }
+    }
+
+    private fun speakRemainder(text: String) {
+        if (!_state.value.isIntercomMode) return
+        if (ttsSpokenUpTo < text.length) {
+            val rem = text.substring(ttsSpokenUpTo).trim()
+            if (rem.isNotEmpty()) {
+                if (ttsSpokenUpTo == 0) voiceController.speak(rem)
+                else voiceController.speakQueued(rem)
+            }
+        }
+    }
+
     fun sendText(hiddenContext: String? = null): String? {
         val prompt = _state.value.input.trim()
         if (prompt.isBlank() || _state.value.isThinking) return null
-        
+
         viewModelScope.launch {
             timelineEventDao.insert(TimelineEventEntity(
                 timestamp = System.currentTimeMillis(),
@@ -92,16 +122,37 @@ class ChatViewModel @Inject constructor(
                 uiComponentType = "TEXT",
                 content = prompt
             ))
-            
-            _state.update { it.copy(input = "", isThinking = true, toolStatusLabel = null) }
+
+            ttsSpokenUpTo = 0
+            streamingTtsHandledTurn = _state.value.isIntercomMode
+            _state.update {
+                it.copy(
+                    input = "",
+                    isThinking = true,
+                    toolStatusLabel = null,
+                    streamingResponse = "",
+                    isStreamingResponse = false
+                )
+            }
 
             val spatialContext = getSpatialContext()
             val finalContext = if (hiddenContext != null) "$spatialContext\n$hiddenContext" else spatialContext
             val query = "$finalContext\n$prompt"
-            val result = chatTurn.text(query, pinnedFlightNumber) { toolLabel ->
+
+            val result = chatTurn.textStreaming(query, pinnedFlightNumber, { toolLabel ->
                 _state.update { it.copy(toolStatusLabel = toolLabel) }
+            }) { chunk ->
+                _state.update {
+                    it.copy(
+                        isStreamingResponse = true,
+                        streamingResponse = it.streamingResponse + chunk,
+                        toolStatusLabel = null
+                    )
+                }
+                speakNewLinesIfNeeded(_state.value.streamingResponse)
             }
 
+            speakRemainder(_state.value.streamingResponse)
             applyTurn(result.response, result.flight, result.luggage, result.receipts)
         }
         return prompt
@@ -109,9 +160,8 @@ class ChatViewModel @Inject constructor(
 
     fun sendImage(prompt: String, bitmap: Bitmap, hiddenContext: String? = null) {
         if (_state.value.isThinking) return
-        
         val actualPrompt = prompt.ifBlank { "Image" }
-        
+
         viewModelScope.launch {
             timelineEventDao.insert(TimelineEventEntity(
                 timestamp = System.currentTimeMillis(),
@@ -119,8 +169,17 @@ class ChatViewModel @Inject constructor(
                 uiComponentType = "TEXT",
                 content = actualPrompt
             ))
-            
-            _state.update { it.copy(input = "", isThinking = true, toolStatusLabel = null) }
+
+            streamingTtsHandledTurn = false
+            _state.update {
+                it.copy(
+                    input = "",
+                    isThinking = true,
+                    toolStatusLabel = null,
+                    streamingResponse = "",
+                    isStreamingResponse = false
+                )
+            }
 
             val spatialContext = getSpatialContext()
             val finalContext = if (hiddenContext != null) "$spatialContext\n$hiddenContext" else spatialContext
@@ -156,6 +215,8 @@ class ChatViewModel @Inject constructor(
             ))
         }
     }
+
+    fun didStreamingTtsHandle(): Boolean = streamingTtsHandledTurn
 
     private suspend fun applyTurn(
         response: String,
@@ -199,6 +260,13 @@ class ChatViewModel @Inject constructor(
             ))
         }
 
-        _state.update { it.copy(isThinking = false, toolStatusLabel = null) }
+        _state.update {
+            it.copy(
+                isThinking = false,
+                toolStatusLabel = null,
+                streamingResponse = "",
+                isStreamingResponse = false
+            )
+        }
     }
 }

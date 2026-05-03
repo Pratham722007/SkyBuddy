@@ -3,237 +3,935 @@
     "iata": "BLR",
     "name": "Kempegowda International Airport",
     "city": "Bengaluru",
-    "terminals": ["T1", "T2"],
+    "terminals": [
+      "T1",
+      "T2"
+    ],
     "floors": {
-      "T1": ["Departures (Level 3)", "Arrivals (Level 1)", "Commercial Zone (Level 2)"],
-      "T2": ["Departures (Level 4)", "Arrivals (Level 1)", "Retail Boulevard (Level 2)", "Food Court (Level 3)"]
+      "T1": [
+        "Departures (Level 3)",
+        "Arrivals (Level 1)",
+        "Commercial Zone (Level 2)"
+      ],
+      "T2": [
+        "Departures (Level 4)",
+        "Arrivals (Level 1)",
+        "Retail Boulevard (Level 2)",
+        "Food Court (Level 3)"
+      ]
     }
   },
-
   "zones": [
-    { "zoneId": "T1_DEP_PRE_SEC",  "label": "T1 Departures — Pre-Security",  "terminal": "T1", "floor": 3, "mapX": 120, "mapY": 80  },
-    { "zoneId": "T1_DEP_POST_SEC", "label": "T1 Departures — Post-Security", "terminal": "T1", "floor": 3, "mapX": 420, "mapY": 80  },
-    { "zoneId": "T1_ARR",          "label": "T1 Arrivals Hall",               "terminal": "T1", "floor": 1, "mapX": 220, "mapY": 300 },
-    { "zoneId": "T2_DEP_PRE_SEC",  "label": "T2 Departures — Pre-Security",  "terminal": "T2", "floor": 4, "mapX": 140, "mapY": 90  },
-    { "zoneId": "T2_DEP_POST_SEC", "label": "T2 Departures — Post-Security", "terminal": "T2", "floor": 4, "mapX": 500, "mapY": 90  },
-    { "zoneId": "T2_FOOD_COURT",   "label": "T2 Food Court (Level 3)",        "terminal": "T2", "floor": 3, "mapX": 320, "mapY": 180 },
-    { "zoneId": "T2_ARR",          "label": "T2 Arrivals Hall",               "terminal": "T2", "floor": 1, "mapX": 260, "mapY": 320 }
+    {
+      "zoneId": "T1_DEP_PRE_SEC",
+      "label": "T1 Departures — Pre-Security",
+      "terminal": "T1",
+      "floor": 3,
+      "mapX": 120,
+      "mapY": 80
+    },
+    {
+      "zoneId": "T1_DEP_POST_SEC",
+      "label": "T1 Departures — Post-Security",
+      "terminal": "T1",
+      "floor": 3,
+      "mapX": 420,
+      "mapY": 80
+    },
+    {
+      "zoneId": "T1_ARR",
+      "label": "T1 Arrivals Hall",
+      "terminal": "T1",
+      "floor": 1,
+      "mapX": 220,
+      "mapY": 300
+    },
+    {
+      "zoneId": "T2_DEP_PRE_SEC",
+      "label": "T2 Departures — Pre-Security",
+      "terminal": "T2",
+      "floor": 4,
+      "mapX": 140,
+      "mapY": 90
+    },
+    {
+      "zoneId": "T2_DEP_POST_SEC",
+      "label": "T2 Departures — Post-Security",
+      "terminal": "T2",
+      "floor": 4,
+      "mapX": 500,
+      "mapY": 90
+    },
+    {
+      "zoneId": "T2_FOOD_COURT",
+      "label": "T2 Food Court (Level 3)",
+      "terminal": "T2",
+      "floor": 3,
+      "mapX": 320,
+      "mapY": 180
+    },
+    {
+      "zoneId": "T2_ARR",
+      "label": "T2 Arrivals Hall",
+      "terminal": "T2",
+      "floor": 1,
+      "mapX": 260,
+      "mapY": 320
+    }
   ],
-
   "gates": [
-    { "gateId": "G1",  "label": "Gate 1",  "terminal": "T1", "mapX": 460, "mapY": 60,  "nearbyPOIs": ["BLR_CAFFE_COFFEE_DAY_T1", "BLR_NEWSSTAND_1"] },
-    { "gateId": "G2",  "label": "Gate 2",  "terminal": "T1", "mapX": 500, "mapY": 60,  "nearbyPOIs": ["BLR_CAFFE_COFFEE_DAY_T1"] },
-    { "gateId": "G3",  "label": "Gate 3",  "terminal": "T1", "mapX": 540, "mapY": 60,  "nearbyPOIs": ["BLR_TRAVEL_ZONE"] },
-    { "gateId": "G4",  "label": "Gate 4",  "terminal": "T1", "mapX": 580, "mapY": 60,  "nearbyPOIs": [] },
-    { "gateId": "G5",  "label": "Gate 5",  "terminal": "T1", "mapX": 620, "mapY": 60,  "nearbyPOIs": [] },
-    { "gateId": "G10", "label": "Gate 10", "terminal": "T2", "mapX": 540, "mapY": 70,  "nearbyPOIs": ["BLR_TOIT_T2", "BLR_STARBUCKS_T2"] },
-    { "gateId": "G11", "label": "Gate 11", "terminal": "T2", "mapX": 580, "mapY": 70,  "nearbyPOIs": ["BLR_STARBUCKS_T2"] },
-    { "gateId": "G12", "label": "Gate 12", "terminal": "T2", "mapX": 620, "mapY": 70,  "nearbyPOIs": ["BLR_MTR_T2"] },
-    { "gateId": "G13", "label": "Gate 13", "terminal": "T2", "mapX": 660, "mapY": 70,  "nearbyPOIs": ["BLR_MTR_T2"] },
-    { "gateId": "G14", "label": "Gate 14", "terminal": "T2", "mapX": 700, "mapY": 70,  "nearbyPOIs": [] },
-    { "gateId": "G15", "label": "Gate 15", "terminal": "T2", "mapX": 740, "mapY": 70,  "nearbyPOIs": [] },
-    { "gateId": "G20", "label": "Gate 20", "terminal": "T2", "mapX": 780, "mapY": 120, "nearbyPOIs": ["BLR_SUBWAY_T2"] }
+    {
+      "gateId": "G1",
+      "label": "Gate 1",
+      "terminal": "T1",
+      "mapX": 460,
+      "mapY": 60,
+      "nearbyPOIs": [
+        "BLR_CAFFE_COFFEE_DAY_T1",
+        "BLR_NEWSSTAND_1"
+      ]
+    },
+    {
+      "gateId": "G2",
+      "label": "Gate 2",
+      "terminal": "T1",
+      "mapX": 500,
+      "mapY": 60,
+      "nearbyPOIs": [
+        "BLR_CAFFE_COFFEE_DAY_T1"
+      ]
+    },
+    {
+      "gateId": "G3",
+      "label": "Gate 3",
+      "terminal": "T1",
+      "mapX": 540,
+      "mapY": 60,
+      "nearbyPOIs": [
+        "BLR_TRAVEL_ZONE"
+      ]
+    },
+    {
+      "gateId": "G4",
+      "label": "Gate 4",
+      "terminal": "T1",
+      "mapX": 580,
+      "mapY": 60,
+      "nearbyPOIs": []
+    },
+    {
+      "gateId": "G5",
+      "label": "Gate 5",
+      "terminal": "T1",
+      "mapX": 620,
+      "mapY": 60,
+      "nearbyPOIs": []
+    },
+    {
+      "gateId": "G10",
+      "label": "Gate 10",
+      "terminal": "T2",
+      "mapX": 540,
+      "mapY": 70,
+      "nearbyPOIs": [
+        "BLR_TOIT_T2",
+        "BLR_STARBUCKS_T2"
+      ]
+    },
+    {
+      "gateId": "G11",
+      "label": "Gate 11",
+      "terminal": "T2",
+      "mapX": 580,
+      "mapY": 70,
+      "nearbyPOIs": [
+        "BLR_STARBUCKS_T2"
+      ]
+    },
+    {
+      "gateId": "G12",
+      "label": "Gate 12",
+      "terminal": "T2",
+      "mapX": 620,
+      "mapY": 70,
+      "nearbyPOIs": [
+        "BLR_MTR_T2"
+      ]
+    },
+    {
+      "gateId": "G13",
+      "label": "Gate 13",
+      "terminal": "T2",
+      "mapX": 660,
+      "mapY": 70,
+      "nearbyPOIs": [
+        "BLR_MTR_T2"
+      ]
+    },
+    {
+      "gateId": "G14",
+      "label": "Gate 14",
+      "terminal": "T2",
+      "mapX": 700,
+      "mapY": 70,
+      "nearbyPOIs": []
+    },
+    {
+      "gateId": "G15",
+      "label": "Gate 15",
+      "terminal": "T2",
+      "mapX": 740,
+      "mapY": 70,
+      "nearbyPOIs": []
+    },
+    {
+      "gateId": "G20",
+      "label": "Gate 20",
+      "terminal": "T2",
+      "mapX": 780,
+      "mapY": 120,
+      "nearbyPOIs": [
+        "BLR_SUBWAY_T2"
+      ]
+    }
   ],
-
   "checkpoints": [
-    { "nodeId": "BLR_CHECKIN_T1",   "label": "Check-in Counters T1",   "terminal": "T1", "floor": 3, "mapX": 150, "mapY": 80,  "airlines": ["IndiGo", "Air India", "Vistara", "GoAir"] },
-    { "nodeId": "BLR_CHECKIN_T2",   "label": "Check-in Counters T2",   "terminal": "T2", "floor": 4, "mapX": 170, "mapY": 90,  "airlines": ["Emirates", "Singapore Airlines", "British Airways", "Air Asia"] },
-    { "nodeId": "BLR_SECURITY_T1",  "label": "Security T1",             "terminal": "T1", "floor": 3, "mapX": 320, "mapY": 80,  "laneCount": 6 },
-    { "nodeId": "BLR_SECURITY_T2",  "label": "Security T2",             "terminal": "T2", "floor": 4, "mapX": 360, "mapY": 90,  "laneCount": 10 },
-    { "nodeId": "BLR_IMMIGRATION",  "label": "Immigration (International Departures)", "terminal": "T2", "floor": 4, "mapX": 400, "mapY": 90 },
-    { "nodeId": "BLR_BAGGAGE_T1",   "label": "Baggage Claim T1",        "terminal": "T1", "floor": 1, "mapX": 180, "mapY": 300, "belts": [1,2,3] },
-    { "nodeId": "BLR_BAGGAGE_T2",   "label": "Baggage Claim T2",        "terminal": "T2", "floor": 1, "mapX": 220, "mapY": 320, "belts": [4,5,6,7,8] }
+    {
+      "nodeId": "BLR_CHECKIN_T1",
+      "label": "Check-in Counters T1",
+      "terminal": "T1",
+      "floor": 3,
+      "mapX": 150,
+      "mapY": 80,
+      "airlines": [
+        "IndiGo",
+        "Air India",
+        "Vistara",
+        "GoAir"
+      ]
+    },
+    {
+      "nodeId": "BLR_CHECKIN_T2",
+      "label": "Check-in Counters T2",
+      "terminal": "T2",
+      "floor": 4,
+      "mapX": 170,
+      "mapY": 90,
+      "airlines": [
+        "Emirates",
+        "Singapore Airlines",
+        "British Airways",
+        "Air Asia"
+      ]
+    },
+    {
+      "nodeId": "BLR_SECURITY_T1",
+      "label": "Security T1",
+      "terminal": "T1",
+      "floor": 3,
+      "mapX": 320,
+      "mapY": 80,
+      "laneCount": 6
+    },
+    {
+      "nodeId": "BLR_SECURITY_T2",
+      "label": "Security T2",
+      "terminal": "T2",
+      "floor": 4,
+      "mapX": 360,
+      "mapY": 90,
+      "laneCount": 10
+    },
+    {
+      "nodeId": "BLR_IMMIGRATION",
+      "label": "Immigration (International Departures)",
+      "terminal": "T2",
+      "floor": 4,
+      "mapX": 400,
+      "mapY": 90
+    },
+    {
+      "nodeId": "BLR_BAGGAGE_T1",
+      "label": "Baggage Claim T1",
+      "terminal": "T1",
+      "floor": 1,
+      "mapX": 180,
+      "mapY": 300,
+      "belts": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "nodeId": "BLR_BAGGAGE_T2",
+      "label": "Baggage Claim T2",
+      "terminal": "T2",
+      "floor": 1,
+      "mapX": 220,
+      "mapY": 320,
+      "belts": [
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    }
   ],
-
   "pois": [
-
     {
       "poiId": "BLR_MTR_T2",
       "name": "MTR (Mavalli Tiffin Rooms)",
       "category": "RESTAURANT",
-      "cuisine": ["South Indian", "Karnataka"],
+      "cuisine": [
+        "South Indian",
+        "Karnataka"
+      ],
       "terminal": "T2",
       "zone": "T2_DEP_POST_SEC",
       "floor": 3,
-      "mapX": 650, "mapY": 140,
+      "mapX": 650,
+      "mapY": 140,
       "isAirside": true,
-      "timings": { "open": "05:00", "close": "23:30", "days": "Daily" },
+      "timings": {
+        "open": "05:00",
+        "close": "23:30",
+        "days": "Daily"
+      },
       "priceRange": "₹₹",
       "rating": 4.5,
-      "tags": ["idli", "dosa", "vada", "filter coffee", "iconic", "breakfast", "South Indian", "local"],
-      "menu": [
-        { "item": "Rava Idli",          "price": 180, "category": "Breakfast",  "isVeg": true,  "popular": true,  "description": "Semolina steamed cakes, MTR's signature dish" },
-        { "item": "Masala Dosa",        "price": 220, "category": "Breakfast",  "isVeg": true,  "popular": true,  "description": "Crispy rice crepe stuffed with spiced potato" },
-        { "item": "Bisi Bele Bath",     "price": 260, "category": "Main Course","isVeg": true,  "popular": true,  "description": "Spiced rice-lentil dish with ghee, a Karnataka staple" },
-        { "item": "Puri Sagu",          "price": 210, "category": "Breakfast",  "isVeg": true,  "popular": false, "description": "Deep fried bread with vegetable curry" },
-        { "item": "Filter Coffee",      "price": 120, "category": "Beverages",  "isVeg": true,  "popular": true,  "description": "Traditional Mysore-blend drip coffee with frothy milk" },
-        { "item": "Kesari Bath",        "price": 160, "category": "Sweets",     "isVeg": true,  "popular": false, "description": "Saffron-infused semolina halwa" },
-        { "item": "Vada Sambar",        "price": 190, "category": "Breakfast",  "isVeg": true,  "popular": true,  "description": "Crispy lentil fritters in tangy lentil soup" },
-        { "item": "Set Dosa",           "price": 200, "category": "Breakfast",  "isVeg": true,  "popular": false, "description": "Soft, spongy trio of dosas with coconut chutney" },
-        { "item": "Rasam Rice",         "price": 230, "category": "Main Course","isVeg": true,  "popular": false, "description": "Pepper-tamarind broth served with rice" },
-        { "item": "Ghee Rice",          "price": 280, "category": "Main Course","isVeg": true,  "popular": false, "description": "Fragrant rice cooked in clarified butter" }
+      "tags": [
+        "idli",
+        "dosa",
+        "vada",
+        "filter coffee",
+        "iconic",
+        "breakfast",
+        "South Indian",
+        "local"
       ],
-      "walkingTimeFromGates": { "G12": "2 min", "G13": "3 min", "G10": "8 min" },
+      "menu": [
+        {
+          "item": "Rava Idli",
+          "price": 180,
+          "category": "Breakfast",
+          "isVeg": true,
+          "popular": true,
+          "description": "Semolina steamed cakes, MTR's signature dish"
+        },
+        {
+          "item": "Masala Dosa",
+          "price": 220,
+          "category": "Breakfast",
+          "isVeg": true,
+          "popular": true,
+          "description": "Crispy rice crepe stuffed with spiced potato"
+        },
+        {
+          "item": "Bisi Bele Bath",
+          "price": 260,
+          "category": "Main Course",
+          "isVeg": true,
+          "popular": true,
+          "description": "Spiced rice-lentil dish with ghee, a Karnataka staple"
+        },
+        {
+          "item": "Puri Sagu",
+          "price": 210,
+          "category": "Breakfast",
+          "isVeg": true,
+          "popular": false,
+          "description": "Deep fried bread with vegetable curry"
+        },
+        {
+          "item": "Filter Coffee",
+          "price": 120,
+          "category": "Beverages",
+          "isVeg": true,
+          "popular": true,
+          "description": "Traditional Mysore-blend drip coffee with frothy milk"
+        },
+        {
+          "item": "Kesari Bath",
+          "price": 160,
+          "category": "Sweets",
+          "isVeg": true,
+          "popular": false,
+          "description": "Saffron-infused semolina halwa"
+        },
+        {
+          "item": "Vada Sambar",
+          "price": 190,
+          "category": "Breakfast",
+          "isVeg": true,
+          "popular": true,
+          "description": "Crispy lentil fritters in tangy lentil soup"
+        },
+        {
+          "item": "Set Dosa",
+          "price": 200,
+          "category": "Breakfast",
+          "isVeg": true,
+          "popular": false,
+          "description": "Soft, spongy trio of dosas with coconut chutney"
+        },
+        {
+          "item": "Rasam Rice",
+          "price": 230,
+          "category": "Main Course",
+          "isVeg": true,
+          "popular": false,
+          "description": "Pepper-tamarind broth served with rice"
+        },
+        {
+          "item": "Ghee Rice",
+          "price": 280,
+          "category": "Main Course",
+          "isVeg": true,
+          "popular": false,
+          "description": "Fragrant rice cooked in clarified butter"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "G12": "2 min",
+        "G13": "3 min",
+        "G10": "8 min"
+      },
       "notes": "No reservations. Expect queues 07:00-09:00. Cash and UPI accepted."
     },
-
     {
       "poiId": "BLR_TOIT_T2",
       "name": "Toit Taproom",
       "category": "RESTAURANT",
-      "cuisine": ["Craft Beer", "Bar Snacks", "Continental"],
+      "cuisine": [
+        "Craft Beer",
+        "Bar Snacks",
+        "Continental"
+      ],
       "terminal": "T2",
       "zone": "T2_DEP_POST_SEC",
       "floor": 3,
-      "mapX": 530, "mapY": 150,
+      "mapX": 530,
+      "mapY": 150,
       "isAirside": true,
-      "timings": { "open": "08:00", "close": "23:00", "days": "Daily" },
+      "timings": {
+        "open": "08:00",
+        "close": "23:00",
+        "days": "Daily"
+      },
       "priceRange": "₹₹₹",
       "rating": 4.3,
-      "tags": ["beer", "craft beer", "pub", "bar", "nachos", "burgers", "continental"],
-      "menu": [
-        { "item": "Toit Lager (Pint)",      "price": 520, "category": "Beer",      "isVeg": false, "popular": true,  "description": "Crisp Bangalore-brewed lager" },
-        { "item": "Weiss (Wheat Beer Pint)", "price": 520, "category": "Beer",      "isVeg": false, "popular": true,  "description": "Belgian-style unfiltered wheat beer" },
-        { "item": "Nachos with Salsa",       "price": 480, "category": "Snacks",    "isVeg": true,  "popular": true,  "description": "Tortilla chips with fresh pico de gallo and sour cream" },
-        { "item": "Chicken Wings (6 pcs)",   "price": 620, "category": "Snacks",    "isVeg": false, "popular": true,  "description": "Tossed in house BBQ or hot sauce" },
-        { "item": "Toit Burger",             "price": 580, "category": "Mains",     "isVeg": false, "popular": false, "description": "Double patty smash burger with cheddar" },
-        { "item": "Fish and Chips",          "price": 680, "category": "Mains",     "isVeg": false, "popular": false, "description": "Beer-battered fish, thick-cut fries, tartare" },
-        { "item": "Margherita Pizza",        "price": 550, "category": "Mains",     "isVeg": true,  "popular": false, "description": "Thin crust, fresh basil, San Marzano tomatoes" },
-        { "item": "Mojito",                  "price": 380, "category": "Mocktails", "isVeg": true,  "popular": false, "description": "Mint, lime, soda" }
+      "tags": [
+        "beer",
+        "craft beer",
+        "pub",
+        "bar",
+        "nachos",
+        "burgers",
+        "continental"
       ],
-      "walkingTimeFromGates": { "G10": "4 min", "G11": "6 min" },
+      "menu": [
+        {
+          "item": "Toit Lager (Pint)",
+          "price": 520,
+          "category": "Beer",
+          "isVeg": false,
+          "popular": true,
+          "description": "Crisp Bangalore-brewed lager"
+        },
+        {
+          "item": "Weiss (Wheat Beer Pint)",
+          "price": 520,
+          "category": "Beer",
+          "isVeg": false,
+          "popular": true,
+          "description": "Belgian-style unfiltered wheat beer"
+        },
+        {
+          "item": "Nachos with Salsa",
+          "price": 480,
+          "category": "Snacks",
+          "isVeg": true,
+          "popular": true,
+          "description": "Tortilla chips with fresh pico de gallo and sour cream"
+        },
+        {
+          "item": "Chicken Wings (6 pcs)",
+          "price": 620,
+          "category": "Snacks",
+          "isVeg": false,
+          "popular": true,
+          "description": "Tossed in house BBQ or hot sauce"
+        },
+        {
+          "item": "Toit Burger",
+          "price": 580,
+          "category": "Mains",
+          "isVeg": false,
+          "popular": false,
+          "description": "Double patty smash burger with cheddar"
+        },
+        {
+          "item": "Fish and Chips",
+          "price": 680,
+          "category": "Mains",
+          "isVeg": false,
+          "popular": false,
+          "description": "Beer-battered fish, thick-cut fries, tartare"
+        },
+        {
+          "item": "Margherita Pizza",
+          "price": 550,
+          "category": "Mains",
+          "isVeg": true,
+          "popular": false,
+          "description": "Thin crust, fresh basil, San Marzano tomatoes"
+        },
+        {
+          "item": "Mojito",
+          "price": 380,
+          "category": "Mocktails",
+          "isVeg": true,
+          "popular": false,
+          "description": "Mint, lime, soda"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "G10": "4 min",
+        "G11": "6 min"
+      },
       "notes": "Craft beer available. Family-friendly. Loud ambience. Great for long layovers."
     },
-
     {
       "poiId": "BLR_STARBUCKS_T2",
       "name": "Starbucks",
       "category": "CAFE",
-      "cuisine": ["Coffee", "Pastries"],
+      "cuisine": [
+        "Coffee",
+        "Pastries"
+      ],
       "terminal": "T2",
       "zone": "T2_DEP_POST_SEC",
       "floor": 4,
-      "mapX": 560, "mapY": 75,
+      "mapX": 560,
+      "mapY": 75,
       "isAirside": true,
-      "timings": { "open": "04:00", "close": "23:59", "days": "Daily" },
+      "timings": {
+        "open": "04:00",
+        "close": "23:59",
+        "days": "Daily"
+      },
       "priceRange": "₹₹₹",
       "rating": 4.1,
-      "tags": ["coffee", "latte", "espresso", "frappuccino", "pastry", "snacks", "Wi-Fi"],
-      "menu": [
-        { "item": "Caramel Macchiato",  "price": 490, "category": "Hot Coffee",  "isVeg": true,  "popular": true,  "description": "Espresso, vanilla syrup, steamed milk, caramel drizzle" },
-        { "item": "Cafe Latte",         "price": 420, "category": "Hot Coffee",  "isVeg": true,  "popular": true,  "description": "Double espresso with steamed milk" },
-        { "item": "Frappuccino",        "price": 540, "category": "Cold Coffee", "isVeg": true,  "popular": true,  "description": "Blended ice coffee with flavour shots" },
-        { "item": "Cold Brew",          "price": 460, "category": "Cold Coffee", "isVeg": true,  "popular": false, "description": "12-hour steeped smooth cold brew" },
-        { "item": "Blueberry Muffin",   "price": 280, "category": "Pastries",   "isVeg": true,  "popular": false, "description": "Classic moist muffin" },
-        { "item": "Chicken Panini",     "price": 380, "category": "Food",       "isVeg": false, "popular": false, "description": "Grilled chicken with pesto, served warm" },
-        { "item": "Masala Chai Latte",  "price": 390, "category": "Hot Coffee",  "isVeg": true,  "popular": true,  "description": "India-inspired spiced tea latte" }
+      "tags": [
+        "coffee",
+        "latte",
+        "espresso",
+        "frappuccino",
+        "pastry",
+        "snacks",
+        "Wi-Fi"
       ],
-      "walkingTimeFromGates": { "G10": "2 min", "G11": "3 min", "G12": "5 min" },
+      "menu": [
+        {
+          "item": "Caramel Macchiato",
+          "price": 490,
+          "category": "Hot Coffee",
+          "isVeg": true,
+          "popular": true,
+          "description": "Espresso, vanilla syrup, steamed milk, caramel drizzle"
+        },
+        {
+          "item": "Cafe Latte",
+          "price": 420,
+          "category": "Hot Coffee",
+          "isVeg": true,
+          "popular": true,
+          "description": "Double espresso with steamed milk"
+        },
+        {
+          "item": "Frappuccino",
+          "price": 540,
+          "category": "Cold Coffee",
+          "isVeg": true,
+          "popular": true,
+          "description": "Blended ice coffee with flavour shots"
+        },
+        {
+          "item": "Cold Brew",
+          "price": 460,
+          "category": "Cold Coffee",
+          "isVeg": true,
+          "popular": false,
+          "description": "12-hour steeped smooth cold brew"
+        },
+        {
+          "item": "Blueberry Muffin",
+          "price": 280,
+          "category": "Pastries",
+          "isVeg": true,
+          "popular": false,
+          "description": "Classic moist muffin"
+        },
+        {
+          "item": "Chicken Panini",
+          "price": 380,
+          "category": "Food",
+          "isVeg": false,
+          "popular": false,
+          "description": "Grilled chicken with pesto, served warm"
+        },
+        {
+          "item": "Masala Chai Latte",
+          "price": 390,
+          "category": "Hot Coffee",
+          "isVeg": true,
+          "popular": true,
+          "description": "India-inspired spiced tea latte"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "G10": "2 min",
+        "G11": "3 min",
+        "G12": "5 min"
+      },
       "notes": "Wi-Fi available with purchase. Power outlets at most seats."
     },
-
     {
       "poiId": "BLR_CAFFE_COFFEE_DAY_T1",
       "name": "Cafe Coffee Day",
       "category": "CAFE",
-      "cuisine": ["Coffee", "Snacks"],
+      "cuisine": [
+        "Coffee",
+        "Snacks"
+      ],
       "terminal": "T1",
       "zone": "T1_DEP_POST_SEC",
       "floor": 3,
-      "mapX": 470, "mapY": 65,
+      "mapX": 470,
+      "mapY": 65,
       "isAirside": true,
-      "timings": { "open": "05:00", "close": "22:00", "days": "Daily" },
+      "timings": {
+        "open": "05:00",
+        "close": "22:00",
+        "days": "Daily"
+      },
       "priceRange": "₹₹",
       "rating": 3.8,
-      "tags": ["coffee", "cappuccino", "cold coffee", "sandwich", "snack"],
-      "menu": [
-        { "item": "Cappuccino",          "price": 220, "category": "Hot Coffee",  "isVeg": true, "popular": true,  "description": "Classic espresso and frothed milk" },
-        { "item": "Cold Coffee",         "price": 240, "category": "Cold Coffee", "isVeg": true, "popular": true,  "description": "Blended with milk and ice" },
-        { "item": "Veg Club Sandwich",   "price": 280, "category": "Food",        "isVeg": true, "popular": true,  "description": "Triple-decker with paneer and vegetables" },
-        { "item": "Chicken Wrap",        "price": 320, "category": "Food",        "isVeg": false,"popular": false, "description": "Grilled chicken, lettuce, mayo in a tortilla" },
-        { "item": "Muffin",              "price": 160, "category": "Pastries",    "isVeg": true, "popular": false, "description": "Assorted flavours" }
+      "tags": [
+        "coffee",
+        "cappuccino",
+        "cold coffee",
+        "sandwich",
+        "snack"
       ],
-      "walkingTimeFromGates": { "G1": "3 min", "G2": "2 min", "G3": "5 min" },
+      "menu": [
+        {
+          "item": "Cappuccino",
+          "price": 220,
+          "category": "Hot Coffee",
+          "isVeg": true,
+          "popular": true,
+          "description": "Classic espresso and frothed milk"
+        },
+        {
+          "item": "Cold Coffee",
+          "price": 240,
+          "category": "Cold Coffee",
+          "isVeg": true,
+          "popular": true,
+          "description": "Blended with milk and ice"
+        },
+        {
+          "item": "Veg Club Sandwich",
+          "price": 280,
+          "category": "Food",
+          "isVeg": true,
+          "popular": true,
+          "description": "Triple-decker with paneer and vegetables"
+        },
+        {
+          "item": "Chicken Wrap",
+          "price": 320,
+          "category": "Food",
+          "isVeg": false,
+          "popular": false,
+          "description": "Grilled chicken, lettuce, mayo in a tortilla"
+        },
+        {
+          "item": "Muffin",
+          "price": 160,
+          "category": "Pastries",
+          "isVeg": true,
+          "popular": false,
+          "description": "Assorted flavours"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "G1": "3 min",
+        "G2": "2 min",
+        "G3": "5 min"
+      },
       "notes": "Quick grab-and-go. Limited seating."
     },
-
     {
       "poiId": "BLR_SUBWAY_T2",
       "name": "Subway",
       "category": "RESTAURANT",
-      "cuisine": ["Fast Food", "Sandwiches", "American"],
+      "cuisine": [
+        "Fast Food",
+        "Sandwiches",
+        "American"
+      ],
       "terminal": "T2",
       "zone": "T2_DEP_POST_SEC",
       "floor": 3,
-      "mapX": 790, "mapY": 130,
+      "mapX": 790,
+      "mapY": 130,
       "isAirside": true,
-      "timings": { "open": "06:00", "close": "22:30", "days": "Daily" },
+      "timings": {
+        "open": "06:00",
+        "close": "22:30",
+        "days": "Daily"
+      },
       "priceRange": "₹₹",
       "rating": 3.7,
-      "tags": ["sandwich", "sub", "fast food", "veg", "salad", "quick bite"],
-      "menu": [
-        { "item": "Veggie Delite (6-inch)",    "price": 280, "category": "Subs",  "isVeg": true,  "popular": true,  "description": "Fresh vegetables on Italian bread" },
-        { "item": "Chicken Teriyaki (6-inch)", "price": 380, "category": "Subs",  "isVeg": false, "popular": true,  "description": "Teriyaki-glazed chicken strips" },
-        { "item": "Paneer Tikka (6-inch)",     "price": 360, "category": "Subs",  "isVeg": true,  "popular": true,  "description": "Spiced grilled paneer, Indian-style" },
-        { "item": "Chicken Slice (6-inch)",    "price": 360, "category": "Subs",  "isVeg": false, "popular": false, "description": "Sliced chicken with choice of sauce" },
-        { "item": "Footlong Combo",            "price": 580, "category": "Combo", "isVeg": false, "popular": false, "description": "Any footlong + drink + chips" },
-        { "item": "Fountain Drink",            "price": 120, "category": "Drinks","isVeg": true,  "popular": false, "description": "Pepsi, 7Up, Miranda" }
+      "tags": [
+        "sandwich",
+        "sub",
+        "fast food",
+        "veg",
+        "salad",
+        "quick bite"
       ],
-      "walkingTimeFromGates": { "G20": "2 min" },
+      "menu": [
+        {
+          "item": "Veggie Delite (6-inch)",
+          "price": 280,
+          "category": "Subs",
+          "isVeg": true,
+          "popular": true,
+          "description": "Fresh vegetables on Italian bread"
+        },
+        {
+          "item": "Chicken Teriyaki (6-inch)",
+          "price": 380,
+          "category": "Subs",
+          "isVeg": false,
+          "popular": true,
+          "description": "Teriyaki-glazed chicken strips"
+        },
+        {
+          "item": "Paneer Tikka (6-inch)",
+          "price": 360,
+          "category": "Subs",
+          "isVeg": true,
+          "popular": true,
+          "description": "Spiced grilled paneer, Indian-style"
+        },
+        {
+          "item": "Chicken Slice (6-inch)",
+          "price": 360,
+          "category": "Subs",
+          "isVeg": false,
+          "popular": false,
+          "description": "Sliced chicken with choice of sauce"
+        },
+        {
+          "item": "Footlong Combo",
+          "price": 580,
+          "category": "Combo",
+          "isVeg": false,
+          "popular": false,
+          "description": "Any footlong + drink + chips"
+        },
+        {
+          "item": "Fountain Drink",
+          "price": 120,
+          "category": "Drinks",
+          "isVeg": true,
+          "popular": false,
+          "description": "Pepsi, 7Up, Miranda"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "G20": "2 min"
+      },
       "notes": "Fully customisable subs. Jain options available on request."
     },
-
     {
       "poiId": "BLR_PUNJAB_GRILL_T2",
       "name": "Punjab Grill",
       "category": "RESTAURANT",
-      "cuisine": ["North Indian", "Punjabi"],
+      "cuisine": [
+        "North Indian",
+        "Punjabi"
+      ],
       "terminal": "T2",
       "zone": "T2_FOOD_COURT",
       "floor": 3,
-      "mapX": 310, "mapY": 175,
+      "mapX": 310,
+      "mapY": 175,
       "isAirside": false,
-      "timings": { "open": "07:00", "close": "22:00", "days": "Daily" },
+      "timings": {
+        "open": "07:00",
+        "close": "22:00",
+        "days": "Daily"
+      },
       "priceRange": "₹₹₹",
       "rating": 4.2,
-      "tags": ["butter chicken", "dal makhani", "naan", "North Indian", "curry", "tandoor"],
-      "menu": [
-        { "item": "Butter Chicken",     "price": 520, "category": "Mains",     "isVeg": false, "popular": true,  "description": "Creamy tomato-based chicken curry" },
-        { "item": "Dal Makhani",        "price": 420, "category": "Mains",     "isVeg": true,  "popular": true,  "description": "Slow-cooked black lentils in butter and cream" },
-        { "item": "Paneer Tikka",       "price": 480, "category": "Starters",  "isVeg": true,  "popular": true,  "description": "Marinated cottage cheese grilled in tandoor" },
-        { "item": "Garlic Naan",        "price": 120, "category": "Breads",    "isVeg": true,  "popular": true,  "description": "Leavened flatbread with garlic butter" },
-        { "item": "Chicken Biryani",    "price": 560, "category": "Rice",      "isVeg": false, "popular": false, "description": "Aromatic basmati rice with spiced chicken" },
-        { "item": "Lassi (Sweet)",      "price": 220, "category": "Beverages", "isVeg": true,  "popular": false, "description": "Chilled yoghurt drink" }
+      "tags": [
+        "butter chicken",
+        "dal makhani",
+        "naan",
+        "North Indian",
+        "curry",
+        "tandoor"
       ],
-      "walkingTimeFromGates": { "G10": "12 min", "G12": "10 min" },
+      "menu": [
+        {
+          "item": "Butter Chicken",
+          "price": 520,
+          "category": "Mains",
+          "isVeg": false,
+          "popular": true,
+          "description": "Creamy tomato-based chicken curry"
+        },
+        {
+          "item": "Dal Makhani",
+          "price": 420,
+          "category": "Mains",
+          "isVeg": true,
+          "popular": true,
+          "description": "Slow-cooked black lentils in butter and cream"
+        },
+        {
+          "item": "Paneer Tikka",
+          "price": 480,
+          "category": "Starters",
+          "isVeg": true,
+          "popular": true,
+          "description": "Marinated cottage cheese grilled in tandoor"
+        },
+        {
+          "item": "Garlic Naan",
+          "price": 120,
+          "category": "Breads",
+          "isVeg": true,
+          "popular": true,
+          "description": "Leavened flatbread with garlic butter"
+        },
+        {
+          "item": "Chicken Biryani",
+          "price": 560,
+          "category": "Rice",
+          "isVeg": false,
+          "popular": false,
+          "description": "Aromatic basmati rice with spiced chicken"
+        },
+        {
+          "item": "Lassi (Sweet)",
+          "price": 220,
+          "category": "Beverages",
+          "isVeg": true,
+          "popular": false,
+          "description": "Chilled yoghurt drink"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "G10": "12 min",
+        "G12": "10 min"
+      },
       "notes": "Pre-security zone. Located in T2 Food Court Level 3. Good for families."
     },
-
     {
       "poiId": "BLR_BENGALURU_KITCHEN",
       "name": "Bengaluru Kitchen",
       "category": "RESTAURANT",
-      "cuisine": ["Karnataka", "South Indian", "Thali"],
+      "cuisine": [
+        "Karnataka",
+        "South Indian",
+        "Thali"
+      ],
       "terminal": "T2",
       "zone": "T2_DEP_POST_SEC",
       "floor": 3,
-      "mapX": 610, "mapY": 160,
+      "mapX": 610,
+      "mapY": 160,
       "isAirside": true,
-      "timings": { "open": "06:00", "close": "23:00", "days": "Daily" },
+      "timings": {
+        "open": "06:00",
+        "close": "23:00",
+        "days": "Daily"
+      },
       "priceRange": "₹₹",
       "rating": 4.0,
-      "tags": ["thali", "Karnataka", "South Indian", "rice", "sambar", "curd rice", "local"],
-      "menu": [
-        { "item": "Karnataka Thali",      "price": 450, "category": "Thali",     "isVeg": true,  "popular": true,  "description": "Rice, sambar, rasam, 3 curries, papad, pickle, dessert" },
-        { "item": "Curd Rice",            "price": 180, "category": "Rice",      "isVeg": true,  "popular": true,  "description": "Tempered yoghurt rice, great for upset stomachs" },
-        { "item": "Chicken Saaru",        "price": 340, "category": "Mains",     "isVeg": false, "popular": false, "description": "Spicy Kannada-style chicken curry" },
-        { "item": "Akki Roti",            "price": 160, "category": "Breads",    "isVeg": true,  "popular": true,  "description": "Rice flour flatbread with onion and coconut" },
-        { "item": "Neer Dosa",            "price": 190, "category": "Breakfast", "isVeg": true,  "popular": false, "description": "Delicate, lacy rice crepes" },
-        { "item": "Tender Coconut Water", "price": 180, "category": "Beverages", "isVeg": true,  "popular": true,  "description": "Fresh, chilled" }
+      "tags": [
+        "thali",
+        "Karnataka",
+        "South Indian",
+        "rice",
+        "sambar",
+        "curd rice",
+        "local"
       ],
-      "walkingTimeFromGates": { "G12": "4 min", "G13": "5 min", "G14": "8 min" }
+      "menu": [
+        {
+          "item": "Karnataka Thali",
+          "price": 450,
+          "category": "Thali",
+          "isVeg": true,
+          "popular": true,
+          "description": "Rice, sambar, rasam, 3 curries, papad, pickle, dessert"
+        },
+        {
+          "item": "Curd Rice",
+          "price": 180,
+          "category": "Rice",
+          "isVeg": true,
+          "popular": true,
+          "description": "Tempered yoghurt rice, great for upset stomachs"
+        },
+        {
+          "item": "Chicken Saaru",
+          "price": 340,
+          "category": "Mains",
+          "isVeg": false,
+          "popular": false,
+          "description": "Spicy Kannada-style chicken curry"
+        },
+        {
+          "item": "Akki Roti",
+          "price": 160,
+          "category": "Breads",
+          "isVeg": true,
+          "popular": true,
+          "description": "Rice flour flatbread with onion and coconut"
+        },
+        {
+          "item": "Neer Dosa",
+          "price": 190,
+          "category": "Breakfast",
+          "isVeg": true,
+          "popular": false,
+          "description": "Delicate, lacy rice crepes"
+        },
+        {
+          "item": "Tender Coconut Water",
+          "price": 180,
+          "category": "Beverages",
+          "isVeg": true,
+          "popular": true,
+          "description": "Fresh, chilled"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "G12": "4 min",
+        "G13": "5 min",
+        "G14": "8 min"
+      }
     },
-
     {
       "poiId": "BLR_TRAVEL_ZONE",
       "name": "Travel Zone (Books & Gifts)",
@@ -242,16 +940,30 @@
       "terminal": "T1",
       "zone": "T1_DEP_POST_SEC",
       "floor": 3,
-      "mapX": 552, "mapY": 62,
+      "mapX": 552,
+      "mapY": 62,
       "isAirside": true,
-      "timings": { "open": "05:00", "close": "22:00", "days": "Daily" },
+      "timings": {
+        "open": "05:00",
+        "close": "22:00",
+        "days": "Daily"
+      },
       "priceRange": "₹₹",
       "rating": 3.5,
-      "tags": ["books", "magazines", "gifts", "souvenirs", "travel accessories", "retail"],
+      "tags": [
+        "books",
+        "magazines",
+        "gifts",
+        "souvenirs",
+        "travel accessories",
+        "retail"
+      ],
       "menu": [],
-      "walkingTimeFromGates": { "G3": "1 min", "G4": "3 min" }
+      "walkingTimeFromGates": {
+        "G3": "1 min",
+        "G4": "3 min"
+      }
     },
-
     {
       "poiId": "BLR_DUTY_FREE",
       "name": "The Duty Free Store",
@@ -260,16 +972,31 @@
       "terminal": "T2",
       "zone": "T2_DEP_POST_SEC",
       "floor": 4,
-      "mapX": 480, "mapY": 88,
+      "mapX": 480,
+      "mapY": 88,
       "isAirside": true,
-      "timings": { "open": "04:30", "close": "23:59", "days": "Daily" },
+      "timings": {
+        "open": "04:30",
+        "close": "23:59",
+        "days": "Daily"
+      },
       "priceRange": "₹₹₹₹",
       "rating": 4.0,
-      "tags": ["duty free", "liquor", "perfume", "chocolates", "international", "shopping"],
+      "tags": [
+        "duty free",
+        "liquor",
+        "perfume",
+        "chocolates",
+        "international",
+        "shopping"
+      ],
       "menu": [],
-      "walkingTimeFromGates": { "G10": "5 min", "G11": "4 min", "G12": "7 min" }
+      "walkingTimeFromGates": {
+        "G10": "5 min",
+        "G11": "4 min",
+        "G12": "7 min"
+      }
     },
-
     {
       "poiId": "BLR_PHARMA",
       "name": "Wellness Forever Pharmacy",
@@ -278,48 +1005,1325 @@
       "terminal": "T2",
       "zone": "T2_DEP_PRE_SEC",
       "floor": 4,
-      "mapX": 210, "mapY": 88,
+      "mapX": 210,
+      "mapY": 88,
       "isAirside": false,
-      "timings": { "open": "05:00", "close": "23:00", "days": "Daily" },
+      "timings": {
+        "open": "05:00",
+        "close": "23:00",
+        "days": "Daily"
+      },
       "priceRange": "₹₹",
       "rating": 3.9,
-      "tags": ["pharmacy", "medicine", "travel pills", "health", "OTC", "first aid"],
+      "tags": [
+        "pharmacy",
+        "medicine",
+        "travel pills",
+        "health",
+        "OTC",
+        "first aid"
+      ],
       "menu": [],
       "walkingTimeFromGates": {}
     },
-
     {
       "poiId": "BLR_LOUNGE_CPAT2",
       "name": "Club House Lounge (Plaza Premium)",
       "category": "LOUNGE",
-      "cuisine": ["Buffet", "International", "Indian"],
+      "cuisine": [
+        "Buffet",
+        "International",
+        "Indian"
+      ],
       "terminal": "T2",
       "zone": "T2_DEP_POST_SEC",
       "floor": 4,
-      "mapX": 520, "mapY": 92,
+      "mapX": 520,
+      "mapY": 92,
       "isAirside": true,
-      "timings": { "open": "04:30", "close": "23:59", "days": "Daily" },
+      "timings": {
+        "open": "04:30",
+        "close": "23:59",
+        "days": "Daily"
+      },
       "priceRange": "₹₹₹₹",
       "rating": 4.4,
-      "tags": ["lounge", "business class", "buffet", "Wi-Fi", "shower", "quiet", "priority pass"],
-      "menu": [
-        { "item": "Breakfast Buffet",   "price": 0,   "category": "Buffet",    "isVeg": false, "popular": true,  "description": "Included in lounge fee — Indian and continental spread" },
-        { "item": "Cocktail / Mocktail","price": 0,   "category": "Beverages", "isVeg": true,  "popular": false, "description": "Complimentary at bar" },
-        { "item": "Day Pass",           "price": 2500,"category": "Access",    "isVeg": true,  "popular": false, "description": "Walk-in lounge access, 3-hour slot" }
+      "tags": [
+        "lounge",
+        "business class",
+        "buffet",
+        "Wi-Fi",
+        "shower",
+        "quiet",
+        "priority pass"
       ],
-      "walkingTimeFromGates": { "G10": "6 min", "G11": "5 min" },
+      "menu": [
+        {
+          "item": "Breakfast Buffet",
+          "price": 0,
+          "category": "Buffet",
+          "isVeg": false,
+          "popular": true,
+          "description": "Included in lounge fee — Indian and continental spread"
+        },
+        {
+          "item": "Cocktail / Mocktail",
+          "price": 0,
+          "category": "Beverages",
+          "isVeg": true,
+          "popular": false,
+          "description": "Complimentary at bar"
+        },
+        {
+          "item": "Day Pass",
+          "price": 2500,
+          "category": "Access",
+          "isVeg": true,
+          "popular": false,
+          "description": "Walk-in lounge access, 3-hour slot"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "G10": "6 min",
+        "G11": "5 min"
+      },
       "notes": "Priority Pass, DragonPass accepted. Showers available. Quiet zone section."
+    },
+    {
+      "poiId": "COFFEE_BEAN",
+      "name": "Coffee Bean",
+      "category": "RESTAURANT",
+      "cuisine": [
+        "Coffee",
+        "Snacks"
+      ],
+      "terminal": "T2",
+      "zone": "T2_DEP_PRE_SEC",
+      "floor": 1,
+      "mapX": 200,
+      "mapY": 400,
+      "isAirside": false,
+      "timings": {
+        "open": "05:00",
+        "close": "23:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹",
+      "rating": 4.0,
+      "tags": [
+        "coffee",
+        "latte",
+        "espresso",
+        "pastry",
+        "cafe",
+        "snacks"
+      ],
+      "menu": [
+        {
+          "item": "Cappuccino",
+          "price": 250,
+          "category": "Coffee",
+          "isVeg": true,
+          "popular": true,
+          "description": "Classic espresso with frothed milk"
+        },
+        {
+          "item": "Cold Brew",
+          "price": 280,
+          "category": "Coffee",
+          "isVeg": true,
+          "popular": true,
+          "description": "Smooth cold brewed coffee"
+        }
+      ],
+      "walkingTimeFromGates": {},
+      "notes": "Pre-security cafe near entrance."
+    },
+    {
+      "poiId": "PIZZA_HUT",
+      "name": "Pizza Hut",
+      "category": "RESTAURANT",
+      "cuisine": [
+        "Italian",
+        "Fast Food",
+        "Pizza"
+      ],
+      "terminal": "T2",
+      "zone": "T2_DEP_PRE_SEC",
+      "floor": 1,
+      "mapX": 150,
+      "mapY": 550,
+      "isAirside": false,
+      "timings": {
+        "open": "07:00",
+        "close": "22:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹",
+      "rating": 3.8,
+      "tags": [
+        "pizza",
+        "pasta",
+        "fast food",
+        "italian",
+        "garlic bread",
+        "pepperoni"
+      ],
+      "menu": [
+        {
+          "item": "Margherita Pizza",
+          "price": 299,
+          "category": "Pizza",
+          "isVeg": true,
+          "popular": true,
+          "description": "Classic cheese and tomato pizza"
+        },
+        {
+          "item": "Pepperoni Pizza",
+          "price": 399,
+          "category": "Pizza",
+          "isVeg": false,
+          "popular": true,
+          "description": "Loaded pepperoni with mozzarella"
+        }
+      ],
+      "walkingTimeFromGates": {},
+      "notes": "Pre-security dining. Quick service."
+    },
+    {
+      "poiId": "SUBWAY",
+      "name": "Subway",
+      "category": "RESTAURANT",
+      "cuisine": [
+        "Fast Food",
+        "Sandwiches"
+      ],
+      "terminal": "T2",
+      "zone": "T2_DEP_PRE_SEC",
+      "floor": 1,
+      "mapX": 200,
+      "mapY": 650,
+      "isAirside": false,
+      "timings": {
+        "open": "06:00",
+        "close": "22:30",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹",
+      "rating": 3.7,
+      "tags": [
+        "sandwich",
+        "sub",
+        "fast food",
+        "veg",
+        "salad",
+        "quick bite"
+      ],
+      "menu": [
+        {
+          "item": "Veggie Delite",
+          "price": 280,
+          "category": "Subs",
+          "isVeg": true,
+          "popular": true,
+          "description": "Fresh vegetables on Italian bread"
+        },
+        {
+          "item": "Chicken Teriyaki",
+          "price": 380,
+          "category": "Subs",
+          "isVeg": false,
+          "popular": true,
+          "description": "Teriyaki-glazed chicken strips"
+        }
+      ],
+      "walkingTimeFromGates": {},
+      "notes": "Customisable subs. Jain options available."
+    },
+    {
+      "poiId": "STARBUCKS",
+      "name": "Starbucks",
+      "category": "CAFE",
+      "cuisine": [
+        "Coffee",
+        "Pastries"
+      ],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 590,
+      "mapY": 560,
+      "isAirside": true,
+      "timings": {
+        "open": "04:00",
+        "close": "23:59",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹",
+      "rating": 4.1,
+      "tags": [
+        "coffee",
+        "latte",
+        "espresso",
+        "frappuccino",
+        "pastry",
+        "Wi-Fi"
+      ],
+      "menu": [
+        {
+          "item": "Caramel Macchiato",
+          "price": 490,
+          "category": "Hot Coffee",
+          "isVeg": true,
+          "popular": true,
+          "description": "Espresso, vanilla, steamed milk, caramel"
+        },
+        {
+          "item": "Frappuccino",
+          "price": 540,
+          "category": "Cold Coffee",
+          "isVeg": true,
+          "popular": true,
+          "description": "Blended ice coffee"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "GATE_C1": "8 min",
+        "GATE_C2": "6 min"
+      },
+      "notes": "Wi-Fi with purchase. Power outlets available."
+    },
+    {
+      "poiId": "JAMIE_OLIVER",
+      "name": "Jamie Oliver",
+      "category": "RESTAURANT",
+      "cuisine": [
+        "Continental",
+        "Italian",
+        "British"
+      ],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 880,
+      "mapY": 470,
+      "isAirside": true,
+      "timings": {
+        "open": "07:00",
+        "close": "23:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹",
+      "rating": 4.3,
+      "tags": [
+        "continental",
+        "pasta",
+        "steak",
+        "fine dining",
+        "british",
+        "italian"
+      ],
+      "menu": [
+        {
+          "item": "Truffle Pasta",
+          "price": 680,
+          "category": "Mains",
+          "isVeg": true,
+          "popular": true,
+          "description": "Fresh pasta with truffle cream sauce"
+        },
+        {
+          "item": "Grilled Chicken",
+          "price": 750,
+          "category": "Mains",
+          "isVeg": false,
+          "popular": true,
+          "description": "Herb-marinated grilled chicken"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "GATE_C3": "5 min",
+        "GATE_C6": "8 min"
+      },
+      "notes": "Premium dining. Reservations recommended during peak hours."
+    },
+    {
+      "poiId": "WOLFGANG_PUCK",
+      "name": "Wolfgang Puck",
+      "category": "RESTAURANT",
+      "cuisine": [
+        "American",
+        "Fine Dining",
+        "International"
+      ],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 880,
+      "mapY": 650,
+      "isAirside": true,
+      "timings": {
+        "open": "07:00",
+        "close": "23:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹₹",
+      "rating": 4.5,
+      "tags": [
+        "fine dining",
+        "american",
+        "steak",
+        "gourmet",
+        "celebrity chef",
+        "premium"
+      ],
+      "menu": [
+        {
+          "item": "Wagyu Burger",
+          "price": 890,
+          "category": "Mains",
+          "isVeg": false,
+          "popular": true,
+          "description": "Premium wagyu beef burger with truffle aioli"
+        },
+        {
+          "item": "Smoked Salmon Pizza",
+          "price": 780,
+          "category": "Mains",
+          "isVeg": false,
+          "popular": true,
+          "description": "Wood-fired pizza with smoked salmon"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "GATE_C3": "6 min",
+        "GATE_C6": "7 min"
+      },
+      "notes": "Celebrity chef restaurant. Premium experience."
+    },
+    {
+      "poiId": "THE_IRISH_HOUSE",
+      "name": "The Irish House",
+      "category": "RESTAURANT",
+      "cuisine": [
+        "Pub Food",
+        "Bar",
+        "Irish"
+      ],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 1000,
+      "mapY": 360,
+      "isAirside": true,
+      "timings": {
+        "open": "08:00",
+        "close": "23:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹",
+      "rating": 4.2,
+      "tags": [
+        "pub",
+        "beer",
+        "bar",
+        "irish",
+        "nachos",
+        "burgers",
+        "wings"
+      ],
+      "menu": [
+        {
+          "item": "Fish and Chips",
+          "price": 580,
+          "category": "Mains",
+          "isVeg": false,
+          "popular": true,
+          "description": "Beer-battered fish with thick-cut fries"
+        },
+        {
+          "item": "Craft Beer Pint",
+          "price": 520,
+          "category": "Beer",
+          "isVeg": true,
+          "popular": true,
+          "description": "Selection of craft beers on tap"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "GATE_C3": "5 min",
+        "GATE_C6": "6 min"
+      },
+      "notes": "Great for layovers. Live sports screenings."
+    },
+    {
+      "poiId": "BOMBAY_BRASSERIE",
+      "name": "Bombay Brasserie",
+      "category": "RESTAURANT",
+      "cuisine": [
+        "Indian",
+        "North Indian",
+        "Mughlai"
+      ],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 1050,
+      "mapY": 470,
+      "isAirside": true,
+      "timings": {
+        "open": "07:00",
+        "close": "22:30",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹",
+      "rating": 4.4,
+      "tags": [
+        "indian",
+        "butter chicken",
+        "biryani",
+        "naan",
+        "curry",
+        "tandoor",
+        "mughlai"
+      ],
+      "menu": [
+        {
+          "item": "Butter Chicken",
+          "price": 520,
+          "category": "Mains",
+          "isVeg": false,
+          "popular": true,
+          "description": "Creamy tomato-based chicken curry"
+        },
+        {
+          "item": "Dal Makhani",
+          "price": 420,
+          "category": "Mains",
+          "isVeg": true,
+          "popular": true,
+          "description": "Slow-cooked black lentils"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "GATE_C6": "5 min",
+        "GATE_D1": "8 min"
+      },
+      "notes": "Authentic Indian cuisine. Vegetarian-friendly."
+    },
+    {
+      "poiId": "FRESH_HEALTHY",
+      "name": "Fresh & Healthy",
+      "category": "RESTAURANT",
+      "cuisine": [
+        "Health Food",
+        "Salads",
+        "Juices"
+      ],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 1220,
+      "mapY": 450,
+      "isAirside": true,
+      "timings": {
+        "open": "06:00",
+        "close": "22:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹",
+      "rating": 4.0,
+      "tags": [
+        "healthy",
+        "salad",
+        "juice",
+        "smoothie",
+        "vegan",
+        "gluten free",
+        "fresh"
+      ],
+      "menu": [
+        {
+          "item": "Acai Bowl",
+          "price": 380,
+          "category": "Bowls",
+          "isVeg": true,
+          "popular": true,
+          "description": "Fresh acai blend with granola and fruits"
+        },
+        {
+          "item": "Green Smoothie",
+          "price": 280,
+          "category": "Drinks",
+          "isVeg": true,
+          "popular": true,
+          "description": "Spinach, banana, and almond milk blend"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "GATE_C6": "3 min",
+        "GATE_D1": "5 min"
+      },
+      "notes": "Healthy options. Vegan and gluten-free menu available."
+    },
+    {
+      "poiId": "LA_MADELEINE",
+      "name": "La Madeleine",
+      "category": "RESTAURANT",
+      "cuisine": [
+        "French",
+        "Bakery",
+        "Cafe"
+      ],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 1220,
+      "mapY": 560,
+      "isAirside": true,
+      "timings": {
+        "open": "06:00",
+        "close": "22:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹",
+      "rating": 4.1,
+      "tags": [
+        "french",
+        "bakery",
+        "croissant",
+        "pastry",
+        "quiche",
+        "cafe",
+        "patisserie"
+      ],
+      "menu": [
+        {
+          "item": "Butter Croissant",
+          "price": 220,
+          "category": "Pastry",
+          "isVeg": true,
+          "popular": true,
+          "description": "Flaky French butter croissant"
+        },
+        {
+          "item": "Quiche Lorraine",
+          "price": 380,
+          "category": "Mains",
+          "isVeg": false,
+          "popular": true,
+          "description": "Classic French quiche with ham and cheese"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "GATE_C6": "4 min",
+        "GATE_D1": "6 min"
+      },
+      "notes": "French bakery and cafe. Fresh pastries daily."
+    },
+    {
+      "poiId": "ANAND_SWEETS",
+      "name": "Anand Sweets",
+      "category": "SHOP",
+      "cuisine": [
+        "Indian Sweets",
+        "Snacks"
+      ],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 880,
+      "mapY": 270,
+      "isAirside": true,
+      "timings": {
+        "open": "06:00",
+        "close": "22:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹",
+      "rating": 4.2,
+      "tags": [
+        "sweets",
+        "mithai",
+        "indian sweets",
+        "namkeen",
+        "snacks",
+        "gifts",
+        "ladoo",
+        "barfi"
+      ],
+      "menu": [
+        {
+          "item": "Kaju Katli Box",
+          "price": 450,
+          "category": "Sweets",
+          "isVeg": true,
+          "popular": true,
+          "description": "Premium cashew fudge gift box"
+        },
+        {
+          "item": "Mixed Namkeen",
+          "price": 250,
+          "category": "Snacks",
+          "isVeg": true,
+          "popular": true,
+          "description": "Assorted savory Indian snack mix"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "GATE_C3": "4 min",
+        "GATE_C2": "5 min"
+      },
+      "notes": "Traditional Indian sweets. Great for gifts."
+    },
+    {
+      "poiId": "ZIMSON",
+      "name": "Zimson",
+      "category": "SHOP",
+      "cuisine": [],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 590,
+      "mapY": 360,
+      "isAirside": true,
+      "timings": {
+        "open": "06:00",
+        "close": "22:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹",
+      "rating": 3.9,
+      "tags": [
+        "watches",
+        "accessories",
+        "luxury",
+        "timepieces",
+        "gifts",
+        "fashion"
+      ],
+      "menu": [],
+      "walkingTimeFromGates": {
+        "GATE_C1": "6 min",
+        "GATE_C2": "5 min"
+      },
+      "notes": "Watch and accessories store."
+    },
+    {
+      "poiId": "DUTY_FREE",
+      "name": "Duty Free",
+      "category": "SHOP",
+      "cuisine": [],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 670,
+      "mapY": 270,
+      "isAirside": true,
+      "timings": {
+        "open": "04:30",
+        "close": "23:59",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹₹",
+      "rating": 4.0,
+      "tags": [
+        "duty free",
+        "liquor",
+        "perfume",
+        "chocolates",
+        "international",
+        "shopping",
+        "tobacco"
+      ],
+      "menu": [],
+      "walkingTimeFromGates": {
+        "GATE_C2": "4 min",
+        "GATE_C1": "7 min"
+      },
+      "notes": "Tax-free shopping. Liquor, perfumes, chocolates."
+    },
+    {
+      "poiId": "MICHAEL_KORS",
+      "name": "Michael Kors",
+      "category": "SHOP",
+      "cuisine": [],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 670,
+      "mapY": 650,
+      "isAirside": true,
+      "timings": {
+        "open": "07:00",
+        "close": "22:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹₹",
+      "rating": 4.1,
+      "tags": [
+        "luxury",
+        "fashion",
+        "handbags",
+        "watches",
+        "designer",
+        "accessories"
+      ],
+      "menu": [],
+      "walkingTimeFromGates": {
+        "GATE_C2": "6 min"
+      },
+      "notes": "Luxury fashion and accessories."
+    },
+    {
+      "poiId": "RELAY",
+      "name": "Relay",
+      "category": "SHOP",
+      "cuisine": [],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 770,
+      "mapY": 360,
+      "isAirside": true,
+      "timings": {
+        "open": "05:00",
+        "close": "23:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹",
+      "rating": 3.7,
+      "tags": [
+        "books",
+        "magazines",
+        "snacks",
+        "travel accessories",
+        "convenience",
+        "gifts",
+        "souvenirs"
+      ],
+      "menu": [],
+      "walkingTimeFromGates": {
+        "GATE_C2": "5 min",
+        "GATE_C3": "4 min"
+      },
+      "notes": "Books, magazines, and travel essentials."
+    },
+    {
+      "poiId": "BOSS",
+      "name": "Boss",
+      "category": "SHOP",
+      "cuisine": [],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 770,
+      "mapY": 560,
+      "isAirside": true,
+      "timings": {
+        "open": "07:00",
+        "close": "22:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹₹",
+      "rating": 4.2,
+      "tags": [
+        "luxury",
+        "fashion",
+        "menswear",
+        "formal",
+        "designer",
+        "hugo boss",
+        "clothing"
+      ],
+      "menu": [],
+      "walkingTimeFromGates": {
+        "GATE_C2": "6 min",
+        "GATE_C3": "5 min"
+      },
+      "notes": "Premium menswear and accessories."
+    },
+    {
+      "poiId": "ARMANI_EXCHANGE",
+      "name": "Armani Exchange",
+      "category": "SHOP",
+      "cuisine": [],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 1000,
+      "mapY": 650,
+      "isAirside": true,
+      "timings": {
+        "open": "07:00",
+        "close": "22:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹₹",
+      "rating": 4.1,
+      "tags": [
+        "luxury",
+        "fashion",
+        "designer",
+        "armani",
+        "clothing",
+        "accessories"
+      ],
+      "menu": [],
+      "walkingTimeFromGates": {
+        "GATE_C3": "7 min",
+        "GATE_C6": "6 min"
+      },
+      "notes": "Designer fashion outlet."
+    },
+    {
+      "poiId": "SWAROVSKI",
+      "name": "Swarovski",
+      "category": "SHOP",
+      "cuisine": [],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 1100,
+      "mapY": 650,
+      "isAirside": true,
+      "timings": {
+        "open": "07:00",
+        "close": "22:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹₹",
+      "rating": 4.3,
+      "tags": [
+        "crystal",
+        "jewelry",
+        "luxury",
+        "gifts",
+        "accessories",
+        "swarovski"
+      ],
+      "menu": [],
+      "walkingTimeFromGates": {
+        "GATE_C6": "5 min",
+        "GATE_D1": "7 min"
+      },
+      "notes": "Crystal jewelry and accessories."
+    },
+    {
+      "poiId": "SS_BEAUTY",
+      "name": "SS Beauty",
+      "category": "SHOP",
+      "cuisine": [],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 1180,
+      "mapY": 650,
+      "isAirside": true,
+      "timings": {
+        "open": "07:00",
+        "close": "22:00",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹",
+      "rating": 3.9,
+      "tags": [
+        "beauty",
+        "cosmetics",
+        "skincare",
+        "perfume",
+        "makeup",
+        "fragrance"
+      ],
+      "menu": [],
+      "walkingTimeFromGates": {
+        "GATE_C6": "4 min",
+        "GATE_D1": "6 min"
+      },
+      "notes": "Beauty and cosmetics store."
+    },
+    {
+      "poiId": "080_ARRIVAL_LOUNGE",
+      "name": "080 Arrival Lounge",
+      "category": "LOUNGE",
+      "cuisine": [
+        "Buffet",
+        "Indian",
+        "Continental"
+      ],
+      "terminal": "T2",
+      "zone": "T2_DEP_PRE_SEC",
+      "floor": 1,
+      "mapX": 200,
+      "mapY": 300,
+      "isAirside": false,
+      "timings": {
+        "open": "05:00",
+        "close": "23:59",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹₹",
+      "rating": 4.3,
+      "tags": [
+        "lounge",
+        "arrival",
+        "buffet",
+        "Wi-Fi",
+        "shower",
+        "rest",
+        "priority pass"
+      ],
+      "menu": [
+        {
+          "item": "Buffet Spread",
+          "price": 0,
+          "category": "Buffet",
+          "isVeg": false,
+          "popular": true,
+          "description": "Complimentary Indian and continental spread"
+        },
+        {
+          "item": "Day Pass",
+          "price": 2000,
+          "category": "Access",
+          "isVeg": true,
+          "popular": false,
+          "description": "Walk-in access, 3-hour slot"
+        }
+      ],
+      "walkingTimeFromGates": {},
+      "notes": "Pre-security arrival lounge. Priority Pass accepted. Showers available."
+    },
+    {
+      "poiId": "T2_080_DOMESTIC_LOUNGE",
+      "name": "T2 080 Domestic Lounge",
+      "category": "LOUNGE",
+      "cuisine": [
+        "Buffet",
+        "Indian",
+        "Continental"
+      ],
+      "terminal": "T2",
+      "zone": "T2_DEP_POST_SEC",
+      "floor": 1,
+      "mapX": 900,
+      "mapY": 800,
+      "isAirside": true,
+      "timings": {
+        "open": "05:00",
+        "close": "23:59",
+        "days": "Daily"
+      },
+      "priceRange": "₹₹₹₹",
+      "rating": 4.4,
+      "tags": [
+        "lounge",
+        "domestic",
+        "buffet",
+        "Wi-Fi",
+        "shower",
+        "quiet",
+        "priority pass",
+        "business class"
+      ],
+      "menu": [
+        {
+          "item": "Breakfast Buffet",
+          "price": 0,
+          "category": "Buffet",
+          "isVeg": false,
+          "popular": true,
+          "description": "Included — Indian and continental spread"
+        },
+        {
+          "item": "Day Pass",
+          "price": 2500,
+          "category": "Access",
+          "isVeg": true,
+          "popular": false,
+          "description": "Walk-in lounge access, 3-hour slot"
+        }
+      ],
+      "walkingTimeFromGates": {
+        "GATE_C3": "8 min",
+        "GATE_D11": "7 min"
+      },
+      "notes": "Post-security domestic lounge. Priority Pass, DragonPass accepted. Showers and quiet zone."
     }
   ],
-
   "services": [
-    { "serviceId": "BLR_ATM_T1",    "label": "ATM — T1 Departures",          "terminal": "T1", "floor": 3, "mapX": 130, "mapY": 83, "tags": ["ATM", "cash", "money", "bank"] },
-    { "serviceId": "BLR_ATM_T2",    "label": "ATM — T2 Departures",          "terminal": "T2", "floor": 4, "mapX": 155, "mapY": 93, "tags": ["ATM", "cash", "money", "bank"] },
-    { "serviceId": "BLR_FOREX",     "label": "Thomas Cook Forex Counter",     "terminal": "T2", "floor": 4, "mapX": 162, "mapY": 93, "tags": ["forex", "currency exchange", "foreign exchange", "dollars", "euros"] },
-    { "serviceId": "BLR_PREPAID",   "label": "Prepaid Taxi Counter (Arrivals)","terminal": "T1", "floor": 1, "mapX": 200, "mapY": 305,"tags": ["taxi", "cab", "prepaid", "transport", "exit"] },
-    { "serviceId": "BLR_WIFI",      "label": "Free Airport Wi-Fi",           "terminal": "ALL","floor": -1,"mapX": -1,  "mapY": -1,  "tags": ["Wi-Fi", "internet", "free wifi", "SSID: BLR_FREE_WIFI"] },
-    { "serviceId": "BLR_SMOKING",   "label": "Designated Smoking Zone T2",   "terminal": "T2", "floor": 4, "mapX": 760, "mapY": 80, "tags": ["smoking", "cigarette", "smokers"] },
-    { "serviceId": "BLR_PRAYER",    "label": "Multi-Faith Prayer Room",      "terminal": "T2", "floor": 3, "mapX": 290, "mapY": 170,"tags": ["prayer", "namaz", "chapel", "meditation", "religion"] },
-    { "serviceId": "BLR_LACTATION", "label": "Mother & Baby Room",           "terminal": "T2", "floor": 3, "mapX": 298, "mapY": 170,"tags": ["baby", "feeding", "nursing", "mother", "infant", "lactation"] }
+    {
+      "serviceId": "BLR_ATM_T1",
+      "label": "ATM — T1 Departures",
+      "terminal": "T1",
+      "floor": 3,
+      "mapX": 130,
+      "mapY": 83,
+      "tags": [
+        "ATM",
+        "cash",
+        "money",
+        "bank"
+      ]
+    },
+    {
+      "serviceId": "BLR_ATM_T2",
+      "label": "ATM — T2 Departures",
+      "terminal": "T2",
+      "floor": 4,
+      "mapX": 155,
+      "mapY": 93,
+      "tags": [
+        "ATM",
+        "cash",
+        "money",
+        "bank"
+      ]
+    },
+    {
+      "serviceId": "BLR_FOREX",
+      "label": "Thomas Cook Forex Counter",
+      "terminal": "T2",
+      "floor": 4,
+      "mapX": 162,
+      "mapY": 93,
+      "tags": [
+        "forex",
+        "currency exchange",
+        "foreign exchange",
+        "dollars",
+        "euros"
+      ]
+    },
+    {
+      "serviceId": "BLR_PREPAID",
+      "label": "Prepaid Taxi Counter (Arrivals)",
+      "terminal": "T1",
+      "floor": 1,
+      "mapX": 200,
+      "mapY": 305,
+      "tags": [
+        "taxi",
+        "cab",
+        "prepaid",
+        "transport",
+        "exit"
+      ]
+    },
+    {
+      "serviceId": "BLR_WIFI",
+      "label": "Free Airport Wi-Fi",
+      "terminal": "ALL",
+      "floor": -1,
+      "mapX": -1,
+      "mapY": -1,
+      "tags": [
+        "Wi-Fi",
+        "internet",
+        "free wifi",
+        "SSID: BLR_FREE_WIFI"
+      ]
+    },
+    {
+      "serviceId": "BLR_SMOKING",
+      "label": "Designated Smoking Zone T2",
+      "terminal": "T2",
+      "floor": 4,
+      "mapX": 760,
+      "mapY": 80,
+      "tags": [
+        "smoking",
+        "cigarette",
+        "smokers"
+      ]
+    },
+    {
+      "serviceId": "BLR_PRAYER",
+      "label": "Multi-Faith Prayer Room",
+      "terminal": "T2",
+      "floor": 3,
+      "mapX": 290,
+      "mapY": 170,
+      "tags": [
+        "prayer",
+        "namaz",
+        "chapel",
+        "meditation",
+        "religion"
+      ]
+    },
+    {
+      "serviceId": "BLR_LACTATION",
+      "label": "Mother & Baby Room",
+      "terminal": "T2",
+      "floor": 3,
+      "mapX": 298,
+      "mapY": 170,
+      "tags": [
+        "baby",
+        "feeding",
+        "nursing",
+        "mother",
+        "infant",
+        "lactation"
+      ]
+    },
+    {
+      "serviceId": "ENTRANCE",
+      "label": "Terminal 2 Main Entrance",
+      "terminal": "T2",
+      "floor": 1,
+      "mapX": 100,
+      "mapY": 500,
+      "tags": [
+        "entrance",
+        "door",
+        "entry",
+        "terminal 2",
+        "main gate"
+      ]
+    },
+    {
+      "serviceId": "BAGGAGE_DROP",
+      "label": "Baggage Drop Counter",
+      "terminal": "T2",
+      "floor": 1,
+      "mapX": 280,
+      "mapY": 500,
+      "tags": [
+        "baggage",
+        "luggage",
+        "check-in",
+        "drop",
+        "bags"
+      ]
+    },
+    {
+      "serviceId": "SECURITY_CHECK",
+      "label": "Security Checkpoint",
+      "terminal": "T2",
+      "floor": 1,
+      "mapX": 450,
+      "mapY": 500,
+      "tags": [
+        "security",
+        "checkpoint",
+        "screening",
+        "scan",
+        "check"
+      ]
+    },
+    {
+      "serviceId": "GATE_C1",
+      "label": "Gate C1",
+      "terminal": "T2",
+      "floor": 1,
+      "mapX": 450,
+      "mapY": 150,
+      "tags": [
+        "gate",
+        "boarding",
+        "C1",
+        "departure"
+      ]
+    },
+    {
+      "serviceId": "GATE_C2",
+      "label": "Gate C2",
+      "terminal": "T2",
+      "floor": 1,
+      "mapX": 650,
+      "mapY": 150,
+      "tags": [
+        "gate",
+        "boarding",
+        "C2",
+        "departure"
+      ]
+    },
+    {
+      "serviceId": "GATE_C3",
+      "label": "Gate C3",
+      "terminal": "T2",
+      "floor": 1,
+      "mapX": 900,
+      "mapY": 150,
+      "tags": [
+        "gate",
+        "boarding",
+        "C3",
+        "departure"
+      ]
+    },
+    {
+      "serviceId": "GATE_C6",
+      "label": "Gate C6",
+      "terminal": "T2",
+      "floor": 1,
+      "mapX": 1200,
+      "mapY": 150,
+      "tags": [
+        "gate",
+        "boarding",
+        "C6",
+        "departure"
+      ]
+    },
+    {
+      "serviceId": "GATE_D1",
+      "label": "Gate D1",
+      "terminal": "T2",
+      "floor": 1,
+      "mapX": 1400,
+      "mapY": 150,
+      "tags": [
+        "gate",
+        "boarding",
+        "D1",
+        "departure"
+      ]
+    },
+    {
+      "serviceId": "GATE_D2",
+      "label": "Gate D2",
+      "terminal": "T2",
+      "floor": 1,
+      "mapX": 1400,
+      "mapY": 300,
+      "tags": [
+        "gate",
+        "boarding",
+        "D2",
+        "departure"
+      ]
+    },
+    {
+      "serviceId": "GATE_D9",
+      "label": "Gate D9",
+      "terminal": "T2",
+      "floor": 1,
+      "mapX": 1400,
+      "mapY": 600,
+      "tags": [
+        "gate",
+        "boarding",
+        "D9",
+        "departure"
+      ]
+    },
+    {
+      "serviceId": "GATE_D11",
+      "label": "Gate D11",
+      "terminal": "T2",
+      "floor": 1,
+      "mapX": 1400,
+      "mapY": 800,
+      "tags": [
+        "gate",
+        "boarding",
+        "D11",
+        "departure"
+      ]
+    }
   ]
 }

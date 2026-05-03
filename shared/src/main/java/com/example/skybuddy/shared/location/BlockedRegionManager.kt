@@ -15,6 +15,11 @@ class BlockedRegionManager @Inject constructor() {
         _blockedNodeIds.value = _blockedNodeIds.value + nodeIds
     }
 
+    /** Replace the entire blocked set — used when receiving a fresh broadcast from security. */
+    fun setBlockedNodes(nodeIds: Set<String>) {
+        _blockedNodeIds.value = nodeIds
+    }
+
     fun removeBlockedNodes(nodeIds: Set<String>) {
         _blockedNodeIds.value = _blockedNodeIds.value - nodeIds
     }

@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -115,23 +117,35 @@ fun ChatScreen(
         if (timelineEvents.isNotEmpty()) listState.animateScrollToItem(timelineEvents.size - 1)
     }
 
+    // Auto-scroll during streaming
+    LaunchedEffect(state.streamingResponse) {
+        if (state.isThinking && timelineEvents.isNotEmpty()) {
+            listState.animateScrollToItem(timelineEvents.size) // scroll to streaming item
+        }
+    }
+
     LaunchedEffect(voiceEvent) {
         when (val ev = voiceEvent) {
             is VoiceEvent.Heard -> {
                 viewModel.onInputChanged(ev.text)
                 val sent = viewModel.sendText()
                 voiceController.consume()
-                if (state.isIntercomMode && sent != null) { /* response will be spoken below */ }
+                if (state.isIntercomMode && sent != null) { /* response will be spoken via streaming TTS */ }
             }
             is VoiceEvent.Error -> voiceController.consume()
             null -> Unit
         }
     }
 
+    // ── TTS: speak full response for non-streaming paths (e.g. image) ──
+    // Streaming text turns handle TTS line-by-line inside the ViewModel.
     LaunchedEffect(timelineEvents.lastOrNull()?.id) {
         val last = timelineEvents.lastOrNull()
         if (state.isIntercomMode && last?.uiComponentType == "TEXT" && last.role == "GEMMA") {
-            voiceController.speak(last.content)
+            // Skip if the streaming TTS already handled this turn
+            if (!viewModel.didStreamingTtsHandle()) {
+                voiceController.speak(last.content)
+            }
         }
     }
 
@@ -229,9 +243,15 @@ fun ChatScreen(
                 }
             }
             items(timelineEvents, key = { it.id }) { ConversationFlowItem(it) }
+
+            // ── Streaming response area ──
             if (state.isThinking) {
-                item {
-                    ThinkingIndicator(state.toolStatusLabel)
+                item(key = "streaming_bubble") {
+                    StreamingBubble(
+                        response = state.streamingResponse,
+                        isStreamingResponse = state.isStreamingResponse,
+                        toolLabel = state.toolStatusLabel
+                    )
                 }
             }
         }
@@ -372,13 +392,73 @@ fun ChatScreen(
     }
 }
 
+// ── Streaming bubble: shows response tokens as they arrive ──
+
 @Composable
-private fun ThinkingIndicator(toolLabel: String? = null) {
+private fun StreamingBubble(
+    response: String,
+    isStreamingResponse: Boolean,
+    toolLabel: String?
+) {
+    val hasResponse = response.isNotBlank()
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Column(
+            modifier = Modifier
+                .widthIn(max = 340.dp)
+                .animateContentSize()
+        ) {
+            // ── Tool call indicator (while tools are running) ──
+            if (toolLabel != null && !hasResponse && !isStreamingResponse) {
+                ThinkingIndicator(toolLabel)
+                Spacer(Modifier.height(4.dp))
+            }
+
+            // ── Streaming response text ──
+            if (hasResponse) {
+                Box(
+                    modifier = Modifier
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = 18.dp,
+                                topEnd = 18.dp,
+                                bottomStart = 4.dp,
+                                bottomEnd = 18.dp
+                            )
+                        )
+                        .background(Color.White)
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                        .animateContentSize()
+                ) {
+                    Text(
+                        text = response,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = OnSurfaceDark
+                    )
+                }
+            }
+
+            // ── Still waiting for any output ──
+            if (!hasResponse && !isStreamingResponse) {
+                ThinkingIndicator(toolLabel)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThinkingDots(
+    modifier: Modifier = Modifier,
+    color: Color = PrimaryPurple.copy(alpha = 0.5f)
+) {
     val transition = rememberInfiniteTransition(label = "dots")
     val offsets = (0..2).map { i ->
         transition.animateFloat(
             initialValue = 0f,
-            targetValue = -6f,
+            targetValue = -4f,
             animationSpec = infiniteRepeatable(
                 animation = tween(400, delayMillis = i * 120, easing = LinearEasing),
                 repeatMode = RepeatMode.Reverse
@@ -386,23 +466,33 @@ private fun ThinkingIndicator(toolLabel: String? = null) {
             label = "dot$i"
         )
     }
-
     Row(
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+        horizontalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         offsets.forEach { anim ->
             val y by anim
             Box(
                 modifier = Modifier
                     .offset(y = y.dp)
-                    .size(8.dp)
+                    .size(6.dp)
                     .clip(CircleShape)
-                    .background(PrimaryPurple.copy(alpha = 0.5f))
+                    .background(color)
             )
         }
-        Spacer(Modifier.width(6.dp))
+    }
+}
+
+@Composable
+private fun ThinkingIndicator(toolLabel: String? = null) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+    ) {
+        ThinkingDots()
+        Spacer(Modifier.width(4.dp))
         Text(
             text = toolLabel ?: "Thinking...",
             style = MaterialTheme.typography.bodySmall,

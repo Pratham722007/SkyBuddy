@@ -1,6 +1,7 @@
 package com.example.skybuddy.ai.tools
 
 import android.content.Context
+import androidx.annotation.Keep
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -11,6 +12,7 @@ import kotlin.math.max
 
 // ── Data Models ───────────────────────────────────────────────────────────────
 
+@Keep
 data class MenuItem(
     val item: String,
     val price: Int,
@@ -20,8 +22,10 @@ data class MenuItem(
     val description: String
 )
 
+@Keep
 data class Timings(val open: String, val close: String, val days: String)
 
+@Keep
 data class PoiNode(
     val poiId: String,
     val name: String,
@@ -42,6 +46,7 @@ data class PoiNode(
     val notes: String?
 )
 
+@Keep
 data class ServiceNode(
     val serviceId: String,
     val label: String,
@@ -52,6 +57,7 @@ data class ServiceNode(
     val tags: List<String>
 )
 
+@Keep
 data class KbSearchResult(
     val poiId: String,
     val name: String,
@@ -68,6 +74,12 @@ data class KbSearchResult(
     val fuzzyScore: Double
 )
 
+@Keep
+data class KbRoot(
+    val pois: List<PoiNode>,
+    val services: List<ServiceNode>
+)
+
 // ── Tool Implementation ───────────────────────────────────────────────────────
 
 @Singleton
@@ -82,11 +94,24 @@ class AirportKnowledgeBaseTool @Inject constructor(
     private val gson = Gson()
 
     init {
-        val json = context.assets.open("bangalore_airport_kb.json")
-            .bufferedReader().readText()
-        val root = gson.fromJson<Map<String, Any>>(json, object : TypeToken<Map<String, Any>>() {}.type)
-        pois     = gson.fromJson(gson.toJson(root["pois"]),     object : TypeToken<List<PoiNode>>() {}.type)
-        services = gson.fromJson(gson.toJson(root["services"]), object : TypeToken<List<ServiceNode>>() {}.type)
+        var p: List<PoiNode> = emptyList()
+        var s: List<ServiceNode> = emptyList()
+        try {
+            val json = context.assets.open("bangalore_airport_kb.json")
+                .bufferedReader().use { it.readText() }
+            val root = gson.fromJson(json, KbRoot::class.java)
+            if (root != null) {
+                p = root.pois ?: emptyList()
+                s = root.services ?: emptyList()
+                android.util.Log.d("SkyBuddy", "KB Tool: Initialized with ${p.size} POIs and ${s.size} services")
+            } else {
+                android.util.Log.e("SkyBuddy", "KB Tool: Root is null after parsing")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SkyBuddy", "KB Tool: Initialization failed", e)
+        }
+        pois = p
+        services = s
     }
 
     /**
@@ -114,8 +139,12 @@ class AirportKnowledgeBaseTool @Inject constructor(
         openAt: String? = null,
         topK: Int = 5
     ): String {
+        android.util.Log.d("SkyBuddy", "KB Tool: Searching for '$query' (terminal=$terminal, airside=$isAirside, cat=$category)")
         val k = topK.coerceIn(1, 10)
         val queryTokens = tokenize(query)
+        if (queryTokens.isEmpty()) {
+            android.util.Log.w("SkyBuddy", "KB Tool: Empty query tokens for '$query'")
+        }
 
         // 1. Score every POI
         val scoredPois = pois.map { poi -> poi to fuzzyScore(queryTokens, poi) }
@@ -190,7 +219,7 @@ class AirportKnowledgeBaseTool @Inject constructor(
             )
         }
 
-        return gson.toJson(
+        val result = gson.toJson(
             mapOf(
                 "query" to query,
                 "pois" to poiResults,
@@ -198,6 +227,8 @@ class AirportKnowledgeBaseTool @Inject constructor(
                 "totalMatches" to (poiResults.size + serviceResults.size)
             )
         )
+        android.util.Log.d("SkyBuddy", "KB Tool: Found ${poiResults.size} POIs and ${serviceResults.size} services. Result length: ${result.length}")
+        return result
     }
 
     // ── Fuzzy scoring engine ──────────────────────────────────────────────────

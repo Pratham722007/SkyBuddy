@@ -4,19 +4,28 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +33,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -33,10 +45,16 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +87,7 @@ import androidx.compose.ui.graphics.vector.PathParser as SvgPathParser
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.graphics.RectF
@@ -81,6 +100,7 @@ import com.example.skybuddy.ui.theme.CardBorder
 import com.example.skybuddy.ui.theme.ErrorRed
 import com.example.skybuddy.ui.theme.OnSurfaceDark
 import com.example.skybuddy.ui.theme.OnSurfaceDim
+import com.example.skybuddy.ui.theme.OnSurfaceLight
 import com.example.skybuddy.ui.theme.PrimaryLight
 import com.example.skybuddy.ui.theme.PrimaryPurple
 import com.example.skybuddy.ui.theme.PrimarySurface
@@ -667,8 +687,13 @@ fun IndoorMapScreen(
             val canvasWidth = constraints.maxWidth.toFloat()
             val canvasHeight = constraints.maxHeight.toFloat()
 
-            val centerMapX = (canvasWidth / 2) - (uiState.currentX * scale)
-            val centerMapY = (canvasHeight / 2) - (uiState.currentY * scale)
+            // graphicsLayer applies: scale-around-pivot(center) FIRST, then translate.
+            // Screen position of map point mx:
+            //   screenX = (mx - pivot) * scale + pivot + translationX
+            // To center currentX at screen center (pivot = canvasWidth/2):
+            //   translationX = (canvasWidth/2 - currentX) * scale
+            // Pan offset from gestures is in screen-space pixels (post-scale),
+            // so it's added directly to translationX.
 
             Canvas(
                 modifier = Modifier
@@ -679,11 +704,31 @@ fun IndoorMapScreen(
                             offset += pan
                         }
                     }
+                    .pointerInput(scale, offset, uiState.currentX, uiState.currentY) {
+                        detectTapGestures { tapOffset ->
+                            // Convert screen tap to map coordinates
+                            val cw = size.width.toFloat()
+                            val ch = size.height.toFloat()
+                            val tx = (cw / 2f - uiState.currentX) * scale + offset.x
+                            val ty = (ch / 2f - uiState.currentY) * scale + offset.y
+                            val mapX = (tapOffset.x - cw / 2f - tx) / scale + cw / 2f
+                            val mapY = (tapOffset.y - ch / 2f - ty) / scale + ch / 2f
+                            val floor = uiState.layout?.floors?.find { it.level == uiState.currentFloor }
+                            val hitNode = floor?.nodes
+                                ?.filter { it.type != "WAYPOINT" }
+                                ?.minByOrNull { (it.x - mapX) * (it.x - mapX) + (it.y - mapY) * (it.y - mapY) }
+                            if (hitNode != null) {
+                                val dist = kotlin.math.sqrt((hitNode.x - mapX) * (hitNode.x - mapX) + (hitNode.y - mapY) * (hitNode.y - mapY))
+                                if (dist < 60f) viewModel.selectNode(hitNode)
+                                else viewModel.clearSelection()
+                            } else viewModel.clearSelection()
+                        }
+                    }
                     .graphicsLayer(
                         scaleX = scale,
                         scaleY = scale,
-                        translationX = centerMapX + offset.x,
-                        translationY = centerMapY + offset.y
+                        translationX = (canvasWidth / 2f - uiState.currentX) * scale + offset.x,
+                        translationY = (canvasHeight / 2f - uiState.currentY) * scale + offset.y
                     )
             ) {
                 val floor = uiState.layout?.floors?.find { it.level == uiState.currentFloor }
@@ -921,6 +966,16 @@ fun IndoorMapScreen(
                         stepText = uiState.navigationStep,
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(Modifier.height(8.dp))
+                    MapSearchBar(
+                        query = uiState.searchQuery,
+                        results = uiState.searchResults,
+                        onQueryChange = { viewModel.updateSearch(it) },
+                        onResultClick = { node ->
+                            viewModel.selectNode(node)
+                            viewModel.updateSearch("")
+                        }
+                    )
                 }
             }
 
@@ -1055,6 +1110,24 @@ fun IndoorMapScreen(
                     )
                 }
             }
+
+            // ─── POI Info Popup Card ───
+            AnimatedVisibility(
+                visible = uiState.selectedNode != null,
+                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
+            ) {
+                uiState.selectedNode?.let { node ->
+                    PoiInfoCard(
+                        node = node,
+                        onDismiss = { viewModel.clearSelection() },
+                        onNavigate = { viewModel.navigateToNode(node) }
+                    )
+                }
+            }
         }
     }
 
@@ -1105,5 +1178,260 @@ private fun StyledFab(
             )
     ) {
         icon()
+    }
+}
+
+// ── POI type helpers for display ─────────────────────────────────────────────
+
+private fun poiTypeIcon(type: String): String = when (type) {
+    "GATE" -> "✈️"
+    "RESTAURANT", "CAFE" -> "🍽️"
+    "SHOP" -> "🛍️"
+    "LOUNGE" -> "🛋️"
+    "CHECKPOINT" -> "🛡️"
+    "BAGGAGE" -> "🧳"
+    "DOOR" -> "🚪"
+    "LIFT" -> "🛗"
+    else -> "📍"
+}
+
+private fun poiTypeLabel(type: String): String = when (type) {
+    "GATE" -> "Gate"
+    "RESTAURANT" -> "Restaurant"
+    "CAFE" -> "Café"
+    "SHOP" -> "Shop"
+    "LOUNGE" -> "Lounge"
+    "CHECKPOINT" -> "Security"
+    "BAGGAGE" -> "Baggage"
+    "DOOR" -> "Entrance"
+    "LIFT" -> "Lift"
+    else -> "Location"
+}
+
+private fun poiColor(type: String): Color = when (type) {
+    "CHECKPOINT" -> ErrorRed
+    "SHOP", "RESTAURANT", "CAFE" -> PrimaryPurple
+    "GATE" -> PrimaryPurple
+    "BAGGAGE" -> SkyTeal
+    "LOUNGE" -> SkyViolet
+    "DOOR" -> PrimaryLight
+    else -> OnSurfaceDim
+}
+
+// ── POI Info Card ────────────────────────────────────────────────────────────
+
+@Composable
+private fun PoiInfoCard(
+    node: LayoutNode,
+    onDismiss: () -> Unit,
+    onNavigate: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        border = BorderStroke(1.dp, CardBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            // Header row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = poiTypeIcon(node.type),
+                        fontSize = 28.sp
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = node.id.replace("_", " "),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = OnSurfaceDark
+                        )
+                        Text(
+                            text = poiTypeLabel(node.type),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = OnSurfaceDim
+                        )
+                    }
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = "Close",
+                        tint = OnSurfaceDim
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Type badge
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = poiColor(node.type).copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = poiTypeLabel(node.type),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = poiColor(node.type)
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Location info
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                InfoChip(label = "Terminal", value = "T2")
+                InfoChip(label = "Floor", value = "Level 1")
+                InfoChip(label = "Zone", value = if (node.x > 500) "Airside" else "Landside")
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Navigate button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        brush = Brush.horizontalGradient(listOf(PrimaryPurple, PrimaryLight)),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+                    .clickable { onNavigate() }
+                    .padding(vertical = 14.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.DirectionsWalk,
+                        contentDescription = "Navigate",
+                        tint = SurfaceWhite,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Navigate Here",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = SurfaceWhite
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoChip(label: String, value: String) {
+    Column {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = OnSurfaceLight,
+            fontSize = 10.sp
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = OnSurfaceDark
+        )
+    }
+}
+
+// ── Map Search Bar ───────────────────────────────────────────────────────────
+
+@Composable
+private fun MapSearchBar(
+    query: String,
+    results: List<LayoutNode>,
+    onQueryChange: (String) -> Unit,
+    onResultClick: (LayoutNode) -> Unit
+) {
+    Column {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            placeholder = {
+                Text("Search places...", color = OnSurfaceLight)
+            },
+            leadingIcon = {
+                Icon(Icons.Filled.Search, contentDescription = "Search", tint = OnSurfaceDim)
+            },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { onQueryChange("") }) {
+                        Icon(Icons.Filled.Close, contentDescription = "Clear", tint = OnSurfaceDim)
+                    }
+                }
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = SurfaceWhite,
+                unfocusedContainerColor = SurfaceWhite,
+                focusedBorderColor = PrimaryPurple,
+                unfocusedBorderColor = CardBorder,
+                cursorColor = PrimaryPurple
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        if (results.isNotEmpty()) {
+            Spacer(Modifier.height(4.dp))
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                border = BorderStroke(1.dp, CardBorder),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                LazyColumn(
+                    modifier = Modifier.padding(vertical = 4.dp)
+                ) {
+                    items(results) { node ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onResultClick(node) }
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = poiTypeIcon(node.type),
+                                fontSize = 18.sp
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = node.id.replace("_", " "),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = OnSurfaceDark
+                                )
+                                Text(
+                                    text = poiTypeLabel(node.type),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = OnSurfaceDim
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

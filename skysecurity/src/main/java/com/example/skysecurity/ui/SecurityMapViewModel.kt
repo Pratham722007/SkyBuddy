@@ -46,7 +46,9 @@ class SecurityMapViewModel @Inject constructor(
         blockedBroadcaster.broadcastingNodeIds
     ) { state, x, y, alerts, blocked ->
         state.copy(currentX = x, currentY = y, alerts = alerts, blockedNodeIds = blocked)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SecurityMapState())
+    }
+    .distinctUntilChanged()
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SecurityMapState())
 
     private var lastAlertCount = 0
 

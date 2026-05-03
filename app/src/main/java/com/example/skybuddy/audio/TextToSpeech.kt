@@ -20,6 +20,9 @@ sealed interface TtsStatus {
 interface TextToSpeechService {
     val status: StateFlow<TtsStatus>
     fun speak(text: String)
+    /** Queue text after any currently-speaking utterance instead of flushing. */
+    fun speakQueued(text: String)
+    fun stop()
     fun shutdown()
 }
 
@@ -73,6 +76,15 @@ class AndroidTextToSpeech @Inject constructor(
     override fun speak(text: String) {
         if (!initialized) return
         tts?.speak(text, AndroidTextToSpeech.QUEUE_FLUSH, null, null)
+    }
+
+    override fun speakQueued(text: String) {
+        if (!initialized) return
+        tts?.speak(text, AndroidTextToSpeech.QUEUE_ADD, null, null)
+    }
+
+    override fun stop() {
+        tts?.stop()
     }
 
     override fun shutdown() {

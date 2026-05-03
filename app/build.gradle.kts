@@ -71,6 +71,9 @@ android {
 }
 
 dependencies {
+    // Shared library (IndoorLocationManager, BlockedRegionManager, MapRepository, etc.)
+    implementation(project(":shared"))
+
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")

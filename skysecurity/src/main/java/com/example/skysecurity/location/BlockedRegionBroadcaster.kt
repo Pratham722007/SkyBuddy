@@ -27,36 +27,50 @@ class BlockedRegionBroadcaster @Inject constructor(
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
             isAdvertising = true
-            Log.d("BlockedBroadcaster", "Blocked region broadcast started")
+            Log.d(TAG, "Blocked region broadcast started")
         }
         override fun onStartFailure(errorCode: Int) {
             isAdvertising = false
-            Log.e("BlockedBroadcaster", "Blocked region broadcast failed: $errorCode")
+            Log.e(TAG, "Blocked region broadcast failed: $errorCode")
         }
     }
 
+    /**
+     * Start (or restart) advertising the current set of blocked node IDs.
+     *
+     * When [nodeIds] is empty, we still broadcast "SBBLK:" (the clear signal)
+     * and keep advertising indefinitely. The previous implementation only
+     * advertised the clear for 2 seconds via a Handler.postDelayed — if the
+     * main app's scanner didn't happen to catch that narrow window the clear
+     * was silently lost. Now the clear stays advertised until the security
+     * officer explicitly blocks something new or stops the broadcast.
+     */
     @SuppressLint("MissingPermission")
     fun broadcastBlockedNodes(nodeIds: Set<String>) {
         _broadcastingNodeIds.value = nodeIds
-        if (nodeIds.isEmpty()) {
-            stopBroadcast()
-            return
-        }
 
         val btManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
         val adapter = btManager?.adapter ?: return
         if (!adapter.isEnabled) return
         advertiser = adapter.bluetoothLeAdvertiser ?: return
 
-        if (isAdvertising) stopBroadcast()
+        // Stop any current advertisement before restarting
+        if (isAdvertising) {
+            try { advertiser?.stopAdvertising(advertiseCallback) } catch (_: SecurityException) {}
+            isAdvertising = false
+        }
 
-        // Build payload: SBBLK:<id1>,<id2>,...
-        val payload = "SBBLK:${nodeIds.joinToString(",")}".take(61)
+        // Build payload — empty string after prefix = clear signal for the main app
+        val payload = if (nodeIds.isEmpty()) {
+            "SBBLK:"
+        } else {
+            "SBBLK:${nodeIds.joinToString(",")}".take(61)
+        }
 
         try {
             adapter.name = payload
         } catch (e: SecurityException) {
-            Log.e("BlockedBroadcaster", "Need BLUETOOTH_CONNECT", e)
+            Log.e(TAG, "Need BLUETOOTH_CONNECT", e)
             return
         }
 
@@ -72,12 +86,14 @@ class BlockedRegionBroadcaster @Inject constructor(
         try {
             advertiser?.startAdvertising(settings, advertiseData, scanResponse, advertiseCallback)
         } catch (e: SecurityException) {
-            Log.e("BlockedBroadcaster", "Need BLUETOOTH_ADVERTISE", e)
+            Log.e(TAG, "Need BLUETOOTH_ADVERTISE", e)
         }
     }
 
     @SuppressLint("MissingPermission")
     fun stopBroadcast() {
+        _broadcastingNodeIds.value = emptySet()
+
         if (!isAdvertising) return
         try {
             advertiser?.stopAdvertising(advertiseCallback)
@@ -85,6 +101,10 @@ class BlockedRegionBroadcaster @Inject constructor(
             btManager?.adapter?.name = "Android"
         } catch (_: SecurityException) {}
         isAdvertising = false
-        _broadcastingNodeIds.value = emptySet()
+        Log.d(TAG, "Blocked region broadcast stopped")
+    }
+
+    companion object {
+        private const val TAG = "BlockedBroadcaster"
     }
 }

@@ -38,6 +38,30 @@ class ChatTurnUseCase @Inject constructor(
         return collectSideEffects(response, activeFlightNumber)
     }
 
+    /**
+     * Streaming variant — collects tokens from the LLM flow and forwards
+     * each raw chunk to [onChunk]. Returns the full result after the flow completes.
+     */
+    suspend fun textStreaming(
+        prompt: String,
+        activeFlightNumber: String?,
+        onToolStarted: ((label: String) -> Unit)? = null,
+        onChunk: (String) -> Unit
+    ): ChatTurnResult {
+        tools.resetTracking()
+        tools.onToolStarted = onToolStarted
+        tools.setActiveFlight(activeFlightNumber)
+        val wrapped = withFlightContext(prompt, activeFlightNumber)
+
+        val fullText = StringBuilder()
+        llm.generateTextStreaming(wrapped).collect { chunk ->
+            fullText.append(chunk)
+            onChunk(chunk)
+        }
+
+        return collectSideEffects(fullText.toString(), activeFlightNumber)
+    }
+
     suspend fun image(
         prompt: String,
         bitmap: Bitmap,

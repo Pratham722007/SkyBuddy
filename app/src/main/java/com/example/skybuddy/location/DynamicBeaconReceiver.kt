@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.util.Log
 import com.example.skybuddy.domain.usecase.EvaluateAmbientBeaconUseCase
@@ -14,6 +16,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.Collections
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,62 +29,74 @@ class DynamicBeaconReceiver @Inject constructor(
 ) {
     private var isScanning = false
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
-    private val processedBeacons = mutableSetOf<String>()
+    private val processedBeacons: MutableSet<String> =
+        Collections.synchronizedSet(mutableSetOf())
+
+    // Track last-seen blocked set to avoid redundant StateFlow emissions
+    @Volatile
+    private var lastBlockedSet: Set<String> = emptySet()
 
     private val scanCallback = object : ScanCallback() {
         @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
-            result?.scanRecord?.let { scanRecord ->
-                // Use the advertised device name from the scan record only.
-                // BluetoothDevice.getName() requires BLUETOOTH_CONNECT, which we do not hold.
-                val deviceName = scanRecord.deviceName ?: return
+            try {
+                result?.scanRecord?.let { scanRecord ->
+                    // Use the advertised device name from the scan record only.
+                    // BluetoothDevice.getName() requires BLUETOOTH_CONNECT, which we do not hold.
+                    val deviceName = scanRecord.deviceName
+                    if (deviceName.isNullOrEmpty()) return
 
-                // ─── Handle blocked-region beacons from security ───
-                if (deviceName.startsWith("SBBLK:")) {
-                    val nodesCsv = deviceName.removePrefix("SBBLK:")
-                    val nodeIds = nodesCsv.split(",")
-                        .map { it.trim() }
-                        .filter { it.isNotEmpty() }
-                        .toSet()
-                    if (nodeIds.isNotEmpty()) {
-                        Log.d("DynamicBeaconReceiver", "Blocked regions received: $nodeIds")
-                        blockedRegionManager.addBlockedNodes(nodeIds)
+                    // ─── Handle blocked-region beacons from security ───
+                    if (deviceName.startsWith("SBBLK:")) {
+                        val nodesCsv = deviceName.removePrefix("SBBLK:")
+                        val nodeIds = nodesCsv.split(",")
+                            .map { it.trim() }
+                            .filter { it.isNotEmpty() }
+                            .toSet()
+                        // Only update if the blocked set actually changed —
+                        // avoids redundant StateFlow emissions and pathfinding recalcs.
+                        if (nodeIds != lastBlockedSet) {
+                            lastBlockedSet = nodeIds
+                            Log.d(TAG, "Blocked regions updated: $nodeIds")
+                            blockedRegionManager.setBlockedNodes(nodeIds)
+                        }
+                        return
                     }
-                    return
-                }
 
-                // ─── Handle SOS beacons (just log, main app doesn't act on its own SOS) ───
-                if (deviceName.startsWith("SBSOS:")) {
-                    Log.d("DynamicBeaconReceiver", "SOS beacon seen: $deviceName")
-                    return
-                }
+                    // ─── Handle SOS beacons (just log, main app doesn't act on its own SOS) ───
+                    if (deviceName.startsWith("SBSOS:")) {
+                        Log.d(TAG, "SOS beacon seen: $deviceName")
+                        return
+                    }
 
-                // ─── Handle shop/offer beacons (existing logic) ───
-                if (deviceName.startsWith("SB:")) {
-                    val payload = deviceName.removePrefix("SB:")
-                    val parts = payload.split("|")
-                    if (parts.size >= 2) {
-                        val locationName = parts[0].trim()
-                        val offer = parts[1].trim()
+                    // ─── Handle shop/offer beacons (existing logic) ───
+                    if (deviceName.startsWith("SB:")) {
+                        val payload = deviceName.removePrefix("SB:")
+                        val parts = payload.split("|")
+                        if (parts.size >= 2) {
+                            val locationName = parts[0].trim()
+                            val offer = parts[1].trim()
 
-                        val uniqueKey = "$locationName-$offer"
-                        if (!processedBeacons.contains(uniqueKey)) {
-                            processedBeacons.add(uniqueKey)
-                            Log.d("DynamicBeaconReceiver", "Intercepted: $locationName - $offer")
+                            val uniqueKey = "$locationName-$offer"
+                            if (processedBeacons.add(uniqueKey)) {
+                                Log.d(TAG, "Intercepted: $locationName - $offer")
 
-                            // Simulate Absolute Anchoring: Snap PDR coordinates based on known beacon name
-                            when (locationName) {
-                                "Costa" -> indoorLocationManager.calibratePosition(700f, 700f) // STV_F0_COFFEE
-                                "DutyFree" -> indoorLocationManager.calibratePosition(500f, 600f) // DUTY_FREE
-                            }
+                                // Simulate Absolute Anchoring: Snap PDR coordinates based on known beacon name
+                                when (locationName) {
+                                    "Costa" -> indoorLocationManager.calibratePosition(700f, 700f)
+                                    "DutyFree" -> indoorLocationManager.calibratePosition(500f, 600f)
+                                }
 
-                            // Trigger JIT AI Generation
-                            coroutineScope.launch {
-                                evaluateAmbientBeacon(offer, locationName)
+                                // Trigger JIT AI Generation
+                                coroutineScope.launch {
+                                    evaluateAmbientBeacon(offer, locationName)
+                                }
                             }
                         }
                     }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error processing scan result", e)
             }
         }
     }
@@ -89,13 +104,22 @@ class DynamicBeaconReceiver @Inject constructor(
     @SuppressLint("MissingPermission")
     fun startScanning() {
         if (isScanning) return
-        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE)
+            as? BluetoothManager
         val bluetoothAdapter = bluetoothManager?.adapter
-        
+
         if (bluetoothAdapter?.isEnabled == true) {
-            val scanner = bluetoothAdapter.bluetoothLeScanner
-            scanner?.startScan(scanCallback)
+            val scanner = bluetoothAdapter.bluetoothLeScanner ?: return
+            val settings = ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
+                .setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
+                .setReportDelay(0)
+                .build()
+            scanner.startScan(emptyList<ScanFilter>(), settings, scanCallback)
             isScanning = true
+            Log.d(TAG, "BLE scanning started (low-latency / aggressive)")
         }
     }
 
@@ -109,7 +133,13 @@ class DynamicBeaconReceiver @Inject constructor(
             val scanner = bluetoothAdapter.bluetoothLeScanner
             scanner?.stopScan(scanCallback)
             isScanning = false
-            processedBeacons.clear() // Clear cache so user can re-test the same messages
+            processedBeacons.clear()
+            lastBlockedSet = emptySet()
+            Log.d(TAG, "BLE scanning stopped")
         }
+    }
+
+    companion object {
+        private const val TAG = "DynamicBeaconReceiver"
     }
 }

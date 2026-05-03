@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -32,7 +34,10 @@ data class MapUiState(
     val currentY: Float = 900f,
     val currentHeading: Float = 0f,
     val blockedNodeIds: Set<String> = emptySet(),
-    val sosSent: Boolean = false
+    val sosSent: Boolean = false,
+    val selectedNode: LayoutNode? = null,
+    val searchQuery: String = "",
+    val searchResults: List<LayoutNode> = emptyList()
 )
 
 @HiltViewModel
@@ -64,7 +69,9 @@ class IndoorMapViewModel @Inject constructor(
             currentHeading = heading,
             blockedNodeIds = blocked
         )
-    }.stateIn(
+    }
+    .distinctUntilChanged()
+    .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = MapUiState()
@@ -77,11 +84,15 @@ class IndoorMapViewModel @Inject constructor(
                 updatePathForPhase(phase)
             }
         }
-        // Re-route when blocked regions change
+        // Re-route when blocked regions change (debounce to avoid rapid recalc storms
+        // from BLE scan callbacks that fire multiple times per second)
         viewModelScope.launch {
-            blockedRegionManager.blockedNodeIds.collectLatest {
-                recalculatePath()
-            }
+            blockedRegionManager.blockedNodeIds
+                .debounce(500L)
+                .distinctUntilChanged()
+                .collectLatest {
+                    recalculatePath()
+                }
         }
     }
 
@@ -198,6 +209,45 @@ class IndoorMapViewModel @Inject constructor(
         viewModelScope.launch {
             kotlinx.coroutines.delay(3000)
             _internalState.update { it.copy(sosSent = false) }
+        }
+    }
+
+    fun selectNode(node: LayoutNode) {
+        _internalState.update { it.copy(selectedNode = node) }
+    }
+
+    fun clearSelection() {
+        _internalState.update { it.copy(selectedNode = null) }
+    }
+
+    fun navigateToNode(node: LayoutNode) {
+        globalGoalId = node.id
+        val label = node.id.replace("_", " ")
+        _internalState.update {
+            it.copy(
+                selectedNode = null,
+                navigationStep = "Navigating to $label"
+            )
+        }
+        recalculatePath()
+    }
+
+    fun updateSearch(query: String) {
+        _internalState.update { state ->
+            val results = if (query.isBlank()) emptyList()
+            else {
+                val q = query.lowercase()
+                state.layout?.floors
+                    ?.flatMap { it.nodes }
+                    ?.filter { it.type != "WAYPOINT" }
+                    ?.filter {
+                        it.id.replace("_", " ").lowercase().contains(q) ||
+                        it.type.lowercase().contains(q)
+                    }
+                    ?.take(8)
+                    ?: emptyList()
+            }
+            state.copy(searchQuery = query, searchResults = results)
         }
     }
 }

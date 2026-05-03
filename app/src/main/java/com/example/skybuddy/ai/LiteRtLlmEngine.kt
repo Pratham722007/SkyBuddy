@@ -105,6 +105,23 @@ class LiteRtLlmEngine @Inject constructor(
         }
     }
 
+    override fun generateTextStreaming(prompt: String): Flow<String> {
+        return flow<String> {
+            val conv = conversation
+            if (conv == null) {
+                emit("Error: model not loaded.")
+                return@flow
+            }
+            try {
+                conv.sendMessageAsync(prompt).collect { chunk ->
+                    emit(chunk.toString())
+                }
+            } catch (t: Throwable) {
+                emit("Error generating response: ${t.message}")
+            }
+        }.flowOn(io)
+    }
+
     override suspend fun generateOneOffText(prompt: String): String = withContext(io) {
         var tempEngine: Engine? = null
         var tempConv: Conversation? = null
@@ -113,7 +130,7 @@ class LiteRtLlmEngine @Inject constructor(
             val config = EngineConfig(
                 modelPath = expectedModelPath(),
                 backend = LiteRtBackend.CPU(),
-                visionBackend = LiteRtBackend.CPU(),
+                visionBackend = LiteRtBackend.GPU(),
                 cacheDir = context.cacheDir.absolutePath
             )
             tempEngine = Engine(config)
@@ -160,25 +177,34 @@ class LiteRtLlmEngine @Inject constructor(
         private const val TAG = "LiteRtLlmEngine"
         const val MODEL_FILE = "gemma.litertlm"
         private val SYSTEM_PROMPT = """
-You are SkyBuddy, an offline AI travel companion for Kempegowda International Airport, Bengaluru (BLR). You run entirely on-device.
+You are SkyBuddy, an AI travel companion. You run fully on-device.
 
-TOOLS:
-- searchAirportKb: Search BLR airport for restaurants, cafes, shops, lounges, services, menus, prices, timings, gate proximity. ALWAYS call this before answering any question about food, drinks, shopping, facilities, or navigation at the airport.
-- getFlightStatus: Get real-time gate, terminal, and status for the user's active flight.
-- checkLoungeAccess: Check if the user's credit card grants lounge access.
-- checkSeatDetails / setMySeat: Look up or save the user's seat.
-- saveBag / getBagDescription: Remember the user's bag description.
-- saveReceipt / getReceipts: Track travel expenses.
+## MANDATORY TOOL RULES — follow these before doing anything else
 
-BEHAVIOUR:
-1. For ANY airport facility question — call searchAirportKb FIRST.
-2. Combine search results with the user's gate context: prefer venues closest to their gate.
-3. For food queries, lead with the top 3 popular menu items and prices.
-4. Always state whether a venue is airside (past security) or landside.
-5. Mention closing times if the venue closes within 1 hour.
-6. If no results are found, say so and suggest alternatives.
-7. Keep responses under 120 words unless the user asks for a full menu.
-8. For navigation, give walking time from the user's current gate.
+RULE 1 — ALWAYS call search when the user asks about ANY of:
+  food, eat, drink, coffee, tea, restaurant, cafe, bar, snack, breakfast, lunch, dinner, menu, price, cost, veg, vegetarian, cuisine, biryani, dosa, burger, pizza, sandwich,
+  shop, store, retail, buy, pharmacy, medicine, book, clothes,
+  lounge, relax, shower, sleep,
+  toilet, restroom, ATM, wifi, charging, prayer room, kids area, smoking, baggage, trolley,
+  gate, terminal, airside, security, post-security, landside, near gate, walking time, how far, directions, where is.
+  DO NOT answer these questions from memory. You MUST call search        first.
+
+RULE 2 — Call getFlightStatus when asked about gate, departure time, delay, or terminal for the active flight.
+
+RULE 3 — Call checkLoungeAccess when the user mentions a credit card and asks about lounge access.
+
+RULE 4 — Call checkSeatDetails or setMySeat for any seat-related question or when parsing a boarding pass.
+
+RULE 5 — Call saveBag / getBagDescription for luggage-related questions.
+
+RULE 6 — Call saveReceipt / getReceipts for expense or receipt questions.
+
+
+## Response style
+- Under 120 words unless a full menu is requested.
+- Lead food answers with top 3 popular items and prices.
+- Always state airside vs landside.
+- Mention closing time if the venue closes within 1 hour.
         """.trimIndent()
     }
 }

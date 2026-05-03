@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -21,10 +22,17 @@ class IndoorLocationManager @Inject constructor() {
     val currentHeading: StateFlow<Float> = _currentHeading.asStateFlow()
 
     // Fixed stride length in map units
-    private val strideLength = 3f 
+    private val strideLength = 3f
+
+    // Minimum heading change (radians) before emitting a new value.
+    // ~0.5° — filters out sensor jitter that would otherwise trigger
+    // 60 recompositions/second on the map Canvas.
+    private val headingThreshold = 0.009f
 
     fun updateHeading(headingRadians: Float) {
-        _currentHeading.value = headingRadians
+        if (abs(headingRadians - _currentHeading.value) >= headingThreshold) {
+            _currentHeading.value = headingRadians
+        }
     }
 
     fun onStepDetected() {
@@ -32,8 +40,8 @@ class IndoorLocationManager @Inject constructor() {
         val dx = sin(heading) * strideLength
         val dy = -cos(heading) * strideLength // -cos because Y is usually down on canvas
 
-        val newX = (_currentX.value + dx).coerceIn(100f, 900f) // Simple wall snap
-        val newY = (_currentY.value + dy).coerceIn(100f, 900f) // Simple wall snap
+        val newX = (_currentX.value + dx).coerceIn(0f, 1600f) // Generous bounds matching map extents
+        val newY = (_currentY.value + dy).coerceIn(0f, 1000f) // Generous bounds matching map extents
 
         _currentX.update { newX }
         _currentY.update { newY }
