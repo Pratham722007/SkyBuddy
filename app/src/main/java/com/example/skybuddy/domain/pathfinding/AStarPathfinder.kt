@@ -40,8 +40,14 @@ class AStarPathfinder {
         // 2. Grid-based A* Search
         val step = 15 // Grid resolution. Smaller = more accurate but slower. 15 is a good balance.
         
-        val startGrid = GridPoint((startNode.x / step).toInt(), (startNode.y / step).toInt())
+        val maxGridX = maskWidth / step
+        val maxGridY = maskHeight / step
+
+        var startGrid = GridPoint((startNode.x / step).toInt(), (startNode.y / step).toInt())
         val goalGrid = GridPoint((goalNode.x / step).toInt(), (goalNode.y / step).toInt())
+
+        // Snap start to nearest walkable cell if it's placed inside a wall/outside boundary
+        startGrid = findNearestWalkable(startGrid, mask, step, maxGridX, maxGridY, maskWidth, maskHeight) ?: startGrid
 
         val openSet = PriorityQueue<NodeWrapper>()
         val allNodes = mutableMapOf<GridPoint, NodeWrapper>()
@@ -57,9 +63,6 @@ class AStarPathfinder {
             GridPoint(0, -1), GridPoint(0, 1), GridPoint(-1, 0), GridPoint(1, 0),
             GridPoint(-1, -1), GridPoint(-1, 1), GridPoint(1, -1), GridPoint(1, 1)
         )
-
-        val maxGridX = maskWidth / step
-        val maxGridY = maskHeight / step
 
         while (openSet.isNotEmpty()) {
             val current = openSet.poll() ?: break
@@ -117,6 +120,47 @@ class AStarPathfinder {
         }
         Log.d("AStar", "No path found.")
         return emptyList()
+    }
+
+    private fun findNearestWalkable(startGrid: GridPoint, mask: Bitmap, step: Int, maxGridX: Int, maxGridY: Int, maskWidth: Int, maskHeight: Int): GridPoint? {
+        val queue = java.util.LinkedList<GridPoint>()
+        val visited = mutableSetOf<GridPoint>()
+        
+        queue.add(startGrid)
+        visited.add(startGrid)
+
+        val directions = listOf(
+            GridPoint(0, -1), GridPoint(0, 1), GridPoint(-1, 0), GridPoint(1, 0),
+            GridPoint(-1, -1), GridPoint(-1, 1), GridPoint(1, -1), GridPoint(1, 1)
+        )
+
+        // Limit search to a reasonable radius to prevent infinite loops if the map is completely blocked
+        var checks = 0
+        val maxChecks = 1000
+
+        while (queue.isNotEmpty() && checks < maxChecks) {
+            val curr = queue.poll()!!
+            checks++
+
+            val pixelX = curr.x * step + (step / 2)
+            val pixelY = curr.y * step + (step / 2)
+
+            if (pixelX in 0 until maskWidth && pixelY in 0 until maskHeight) {
+                if (mask.getPixel(pixelX, pixelY) == Color.WHITE) {
+                    return curr // Found the nearest walkable cell
+                }
+            }
+
+            for (dir in directions) {
+                val next = GridPoint(curr.x + dir.x, curr.y + dir.y)
+                if (next.x in 0 until maxGridX && next.y in 0 until maxGridY) {
+                    if (visited.add(next)) {
+                        queue.add(next)
+                    }
+                }
+            }
+        }
+        return null
     }
 
     private fun createCollisionMask(floor: FloorLayout, width: Int, height: Int): Bitmap {
