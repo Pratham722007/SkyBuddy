@@ -36,7 +36,11 @@ class SecurityMapViewModel @Inject constructor(
 ) : ViewModel() {
 
     /** Beacon error/status events — collect in the UI to show Snackbar. */
-    val beaconEvents = sosScanner.scanEvents
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val beaconEvents = kotlinx.coroutines.flow.merge(
+        sosScanner.scanEvents,
+        blockedBroadcaster.broadcastEvents
+    )
 
     private val pathfinder = AStarPathfinder()
     private val _state = MutableStateFlow(SecurityMapState())

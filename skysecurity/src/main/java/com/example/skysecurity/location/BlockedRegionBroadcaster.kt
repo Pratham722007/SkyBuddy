@@ -9,8 +9,11 @@ import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,6 +27,10 @@ class BlockedRegionBroadcaster @Inject constructor(
     private val _broadcastingNodeIds = MutableStateFlow<Set<String>>(emptySet())
     val broadcastingNodeIds: StateFlow<Set<String>> = _broadcastingNodeIds.asStateFlow()
 
+    // User-facing error/status events — collect in the UI to show Snackbar
+    private val _broadcastEvents = MutableSharedFlow<String>(extraBufferCapacity = 8)
+    val broadcastEvents: SharedFlow<String> = _broadcastEvents.asSharedFlow()
+
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
             isAdvertising = true
@@ -31,7 +38,9 @@ class BlockedRegionBroadcaster @Inject constructor(
         }
         override fun onStartFailure(errorCode: Int) {
             isAdvertising = false
-            Log.e(TAG, "Blocked region broadcast failed: $errorCode")
+            val msg = "Blocked region broadcast failed (error $errorCode)"
+            Log.e(TAG, msg)
+            _broadcastEvents.tryEmit(msg)
         }
     }
 
@@ -50,9 +59,20 @@ class BlockedRegionBroadcaster @Inject constructor(
         _broadcastingNodeIds.value = nodeIds
 
         val btManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-        val adapter = btManager?.adapter ?: return
-        if (!adapter.isEnabled) return
-        advertiser = adapter.bluetoothLeAdvertiser ?: return
+        val adapter = btManager?.adapter
+        if (adapter == null || !adapter.isEnabled) {
+            val msg = "Cannot broadcast: Bluetooth is ${if (adapter == null) "not available" else "turned off"}"
+            Log.w(TAG, msg)
+            _broadcastEvents.tryEmit(msg)
+            return
+        }
+        advertiser = adapter.bluetoothLeAdvertiser
+        if (advertiser == null) {
+            val msg = "Cannot broadcast: BLE advertiser unavailable"
+            Log.e(TAG, msg)
+            _broadcastEvents.tryEmit(msg)
+            return
+        }
 
         // Stop any current advertisement before restarting
         if (isAdvertising) {
@@ -70,7 +90,9 @@ class BlockedRegionBroadcaster @Inject constructor(
         try {
             adapter.name = payload
         } catch (e: SecurityException) {
-            Log.e(TAG, "Need BLUETOOTH_CONNECT", e)
+            val msg = "Blocked region broadcast failed: missing Bluetooth permission"
+            Log.e(TAG, msg, e)
+            _broadcastEvents.tryEmit(msg)
             return
         }
 
@@ -86,7 +108,9 @@ class BlockedRegionBroadcaster @Inject constructor(
         try {
             advertiser?.startAdvertising(settings, advertiseData, scanResponse, advertiseCallback)
         } catch (e: SecurityException) {
-            Log.e(TAG, "Need BLUETOOTH_ADVERTISE", e)
+            val msg = "Blocked region broadcast failed: missing advertise permission"
+            Log.e(TAG, msg, e)
+            _broadcastEvents.tryEmit(msg)
         }
     }
 
