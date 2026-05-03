@@ -1,6 +1,8 @@
 package com.example.skybuddy.ui.chat
 
+import android.app.Application
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.skybuddy.data.db.FlightEntity
@@ -17,6 +19,7 @@ import com.example.skybuddy.location.IndoorLocationManager
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +27,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
 import javax.inject.Inject
 
 data class ChatUiState(
@@ -39,6 +45,7 @@ data class ChatUiState(
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
+    private val application: Application,
     private val flightRepository: FlightRepository,
     private val timelineEventDao: TimelineEventDao,
     private val chatTurn: ChatTurnUseCase,
@@ -163,11 +170,15 @@ class ChatViewModel @Inject constructor(
         val actualPrompt = prompt.ifBlank { "Image" }
 
         viewModelScope.launch {
+            // Save bitmap to internal storage so it persists in the chat
+            val savedUri = saveBitmapToInternal(bitmap)
+
             timelineEventDao.insert(TimelineEventEntity(
                 timestamp = System.currentTimeMillis(),
                 role = "USER",
                 uiComponentType = "TEXT",
-                content = actualPrompt
+                content = actualPrompt,
+                localImageUri = savedUri
             ))
 
             streamingTtsHandledTurn = false
@@ -189,6 +200,25 @@ class ChatViewModel @Inject constructor(
             }
 
             applyTurn(result.response, result.flight, result.luggage, result.receipts)
+        }
+    }
+
+    /**
+     * Saves a Bitmap to internal storage under a `chat_images/` directory.
+     * Returns the file URI as a String, or null if saving fails.
+     */
+    private suspend fun saveBitmapToInternal(bitmap: Bitmap): String? = withContext(Dispatchers.IO) {
+        try {
+            val dir = File(application.filesDir, "chat_images")
+            if (!dir.exists()) dir.mkdirs()
+            val file = File(dir, "img_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+            }
+            Uri.fromFile(file).toString()
+        } catch (e: Exception) {
+            android.util.Log.e("ChatViewModel", "Failed to save image", e)
+            null
         }
     }
 

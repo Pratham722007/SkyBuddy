@@ -9,8 +9,11 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Collections
 import javax.inject.Inject
@@ -34,6 +37,10 @@ class SOSBeaconScanner @Inject constructor(
     val alerts: StateFlow<List<SOSAlert>> = _alerts.asStateFlow()
     private val seenPayloads: MutableSet<String> =
         Collections.synchronizedSet(mutableSetOf())
+
+    // User-facing error/status events — collect in the UI to show Snackbar
+    private val _scanEvents = MutableSharedFlow<String>(extraBufferCapacity = 8)
+    val scanEvents: SharedFlow<String> = _scanEvents.asSharedFlow()
 
     private val scanCallback = object : ScanCallback() {
         @SuppressLint("MissingPermission")
@@ -66,6 +73,19 @@ class SOSBeaconScanner @Inject constructor(
                 Log.e(TAG, "Error processing scan result", e)
             }
         }
+
+        override fun onScanFailed(errorCode: Int) {
+            isScanning = false
+            val reason = when (errorCode) {
+                SCAN_FAILED_ALREADY_STARTED -> "ALREADY_STARTED"
+                SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "APP_REGISTRATION_FAILED"
+                SCAN_FAILED_INTERNAL_ERROR -> "INTERNAL_ERROR"
+                SCAN_FAILED_FEATURE_UNSUPPORTED -> "FEATURE_UNSUPPORTED"
+                else -> "UNKNOWN($errorCode)"
+            }
+            Log.e(TAG, "SOS scan failed: $reason (code=$errorCode)")
+            _scanEvents.tryEmit("SOS scan failed: $reason")
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -73,19 +93,31 @@ class SOSBeaconScanner @Inject constructor(
         if (isScanning) return
         val btManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
         val adapter = btManager?.adapter
-        if (adapter?.isEnabled == true) {
-            val scanner = adapter.bluetoothLeScanner ?: return
-            val settings = ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-                .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
-                .setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
-                .setReportDelay(0)
-                .build()
-            scanner.startScan(emptyList<ScanFilter>(), settings, scanCallback)
-            isScanning = true
-            Log.d(TAG, "SOS scanning started (low-latency mode)")
+
+        if (adapter == null || !adapter.isEnabled) {
+            val msg = "SOS scanning unavailable: Bluetooth is ${if (adapter == null) "not available" else "turned off"}"
+            Log.w(TAG, msg)
+            _scanEvents.tryEmit(msg)
+            return
         }
+
+        val scanner = adapter.bluetoothLeScanner
+        if (scanner == null) {
+            Log.e(TAG, "Cannot start SOS scanning: BluetoothLeScanner is null (BT may be turning off)")
+            _scanEvents.tryEmit("SOS scanning unavailable: Bluetooth is turning off")
+            return
+        }
+
+        val settings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+            .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
+            .setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
+            .setReportDelay(0)
+            .build()
+        scanner.startScan(emptyList<ScanFilter>(), settings, scanCallback)
+        isScanning = true
+        Log.d(TAG, "SOS scanning started (low-latency / aggressive)")
     }
 
     @SuppressLint("MissingPermission")

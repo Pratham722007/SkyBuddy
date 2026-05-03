@@ -55,6 +55,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
@@ -674,6 +677,17 @@ fun IndoorMapScreen(
         }
     }
 
+    // Show beacon errors as Snackbars
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) {
+        viewModel.beaconEvents.collect { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+
     // Pre-parse SVG paths once per layout/floor change (avoids re-parsing every frame)
     val cachedPaths = remember(uiState.layout, uiState.currentFloor) {
         val floor = uiState.layout?.floors?.find { it.level == uiState.currentFloor }
@@ -683,6 +697,11 @@ fun IndoorMapScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize().background(MapCanvasBackground)) {
+        // Beacon status Snackbar
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp)
+        )
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val canvasWidth = constraints.maxWidth.toFloat()
             val canvasHeight = constraints.maxHeight.toFloat()

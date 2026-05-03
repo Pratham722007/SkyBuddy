@@ -165,7 +165,23 @@ fun SecurityMapScreen(
             ?.paths?.associate { lp -> lp.d to SvgPathParser().parsePathString(lp.d).toPath() } ?: emptyMap()
     }
 
+    // Show beacon errors as Snackbars
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) {
+        viewModel.beaconEvents.collect { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize().background(SecBg)) {
+        // Beacon status Snackbar
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp)
+        )
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val cw = constraints.maxWidth.toFloat()
             val ch = constraints.maxHeight.toFloat()

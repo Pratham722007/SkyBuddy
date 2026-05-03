@@ -9,6 +9,7 @@ import com.example.skybuddy.shared.domain.pathfinding.AStarPathfinder
 import com.example.skybuddy.shared.location.BlockedRegionManager
 import com.example.skybuddy.shared.location.IndoorLocationManager
 import com.example.skybuddy.domain.state.JourneyManager
+import com.example.skybuddy.location.DynamicBeaconReceiver
 import com.example.skybuddy.location.SOSBeaconEmitter
 import com.example.skybuddy.ui.journey.JourneyPhase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -46,8 +47,12 @@ class IndoorMapViewModel @Inject constructor(
     private val journeyManager: JourneyManager,
     private val indoorLocationManager: IndoorLocationManager,
     private val blockedRegionManager: BlockedRegionManager,
-    private val sosBeaconEmitter: SOSBeaconEmitter
+    private val sosBeaconEmitter: SOSBeaconEmitter,
+    private val dynamicBeaconReceiver: DynamicBeaconReceiver
 ) : ViewModel() {
+
+    /** Beacon error/status events — collect in the UI to show Snackbar. */
+    val beaconEvents = dynamicBeaconReceiver.beaconEvents
 
     private val pathfinder = AStarPathfinder()
     private val _internalState = MutableStateFlow(MapUiState())

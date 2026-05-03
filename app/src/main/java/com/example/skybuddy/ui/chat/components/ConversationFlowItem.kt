@@ -1,15 +1,18 @@
 package com.example.skybuddy.ui.chat.components
 
+import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -25,8 +28,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.example.skybuddy.data.db.FlightEntity
 import com.example.skybuddy.data.db.LuggageEntity
 import com.example.skybuddy.data.db.ReceiptEntity
@@ -90,29 +97,76 @@ private fun MessageBubble(event: TimelineEventEntity) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
-        Box(
-            modifier = Modifier
-                .widthIn(max = 320.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 18.dp,
-                        topEnd = 18.dp,
-                        bottomStart = if (isUser) 18.dp else 4.dp,
-                        bottomEnd = if (isUser) 4.dp else 18.dp
-                    )
-                )
-                .then(
-                    if (isUser) Modifier.background(PrimaryPurple)
-                    else Modifier.background(Color.White)
-                )
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            contentAlignment = Alignment.CenterStart
+        Column(
+            modifier = Modifier.widthIn(max = 320.dp)
         ) {
-            Text(
-                event.content,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isUser) Color.White else OnSurfaceDark
-            )
+            // ── Show attached image (user uploaded photo) ──
+            if (!event.localImageUri.isNullOrBlank()) {
+                val context = LocalContext.current
+                Box(
+                    modifier = Modifier
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = 18.dp,
+                                topEnd = 18.dp,
+                                bottomStart = if (event.content.isNotBlank()) 4.dp else if (isUser) 18.dp else 4.dp,
+                                bottomEnd = if (event.content.isNotBlank()) 4.dp else if (isUser) 4.dp else 18.dp
+                            )
+                        )
+                ) {
+                    Image(
+                        painter = rememberAsyncImagePainter(
+                            ImageRequest.Builder(context)
+                                .data(Uri.parse(event.localImageUri))
+                                .crossfade(true)
+                                .build()
+                        ),
+                        contentDescription = "Attached photo",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                if (event.content.isNotBlank()) Spacer(Modifier.height(2.dp))
+            }
+
+            // ── Text content ──
+            if (event.content.isNotBlank()) {
+                Box(
+                    modifier = Modifier
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = if (!event.localImageUri.isNullOrBlank()) 4.dp else 18.dp,
+                                topEnd = if (!event.localImageUri.isNullOrBlank()) 4.dp else 18.dp,
+                                bottomStart = if (isUser) 18.dp else 4.dp,
+                                bottomEnd = if (isUser) 4.dp else 18.dp
+                            )
+                        )
+                        .then(
+                            if (isUser) Modifier.background(PrimaryPurple)
+                            else Modifier.background(Color.White)
+                        )
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (isUser) {
+                        // User messages: plain text
+                        Text(
+                            event.content,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White
+                        )
+                    } else {
+                        // AI messages: render Markdown
+                        MarkdownText(
+                            markdown = event.content,
+                            textColor = OnSurfaceDark,
+                            accentColor = PrimaryPurple
+                        )
+                    }
+                }
+            }
         }
     }
 }

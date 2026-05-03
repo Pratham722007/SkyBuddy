@@ -35,6 +35,9 @@ class SecurityMapViewModel @Inject constructor(
     private val blockedBroadcaster: BlockedRegionBroadcaster
 ) : ViewModel() {
 
+    /** Beacon error/status events — collect in the UI to show Snackbar. */
+    val beaconEvents = sosScanner.scanEvents
+
     private val pathfinder = AStarPathfinder()
     private val _state = MutableStateFlow(SecurityMapState())
 

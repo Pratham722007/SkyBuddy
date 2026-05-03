@@ -61,6 +61,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.skybuddy.core.permission.rememberPermissionController
 import com.example.skybuddy.ui.chat.components.ConversationFlowItem
+import com.example.skybuddy.ui.chat.components.MarkdownText
 import com.example.skybuddy.ui.flight.FlightSummaryCard
 import com.example.skybuddy.ui.theme.BackgroundGray
 import com.example.skybuddy.ui.theme.GlassCard
@@ -433,10 +434,10 @@ private fun StreamingBubble(
                         .padding(horizontal = 14.dp, vertical = 10.dp)
                         .animateContentSize()
                 ) {
-                    Text(
-                        text = response,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = OnSurfaceDark
+                    MarkdownText(
+                        markdown = response,
+                        textColor = OnSurfaceDark,
+                        accentColor = PrimaryPurple
                     )
                 }
             }

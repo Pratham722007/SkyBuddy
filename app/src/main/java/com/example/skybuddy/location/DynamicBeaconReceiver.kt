@@ -15,6 +15,9 @@ import com.example.skybuddy.shared.location.IndoorLocationManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.util.Collections
 import javax.inject.Inject
@@ -35,6 +38,11 @@ class DynamicBeaconReceiver @Inject constructor(
     // Track last-seen blocked set to avoid redundant StateFlow emissions
     @Volatile
     private var lastBlockedSet: Set<String> = emptySet()
+
+    // User-facing error/status events — collect in the UI to show Snackbar
+    private val _beaconEvents = MutableSharedFlow<String>(extraBufferCapacity = 8)
+    val beaconEvents: SharedFlow<String> = _beaconEvents.asSharedFlow()
+
 
     private val scanCallback = object : ScanCallback() {
         @SuppressLint("MissingPermission")
@@ -99,6 +107,19 @@ class DynamicBeaconReceiver @Inject constructor(
                 Log.e(TAG, "Error processing scan result", e)
             }
         }
+
+        override fun onScanFailed(errorCode: Int) {
+            isScanning = false
+            val reason = when (errorCode) {
+                SCAN_FAILED_ALREADY_STARTED -> "ALREADY_STARTED"
+                SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "APP_REGISTRATION_FAILED"
+                SCAN_FAILED_INTERNAL_ERROR -> "INTERNAL_ERROR"
+                SCAN_FAILED_FEATURE_UNSUPPORTED -> "FEATURE_UNSUPPORTED"
+                else -> "UNKNOWN($errorCode)"
+            }
+            Log.e(TAG, "BLE scan failed: $reason (code=$errorCode)")
+            _beaconEvents.tryEmit("Beacon scan failed: $reason")
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -108,19 +129,30 @@ class DynamicBeaconReceiver @Inject constructor(
             as? BluetoothManager
         val bluetoothAdapter = bluetoothManager?.adapter
 
-        if (bluetoothAdapter?.isEnabled == true) {
-            val scanner = bluetoothAdapter.bluetoothLeScanner ?: return
-            val settings = ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-                .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
-                .setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
-                .setReportDelay(0)
-                .build()
-            scanner.startScan(emptyList<ScanFilter>(), settings, scanCallback)
-            isScanning = true
-            Log.d(TAG, "BLE scanning started (low-latency / aggressive)")
+        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
+            val msg = "Beacon scanning unavailable: Bluetooth is ${if (bluetoothAdapter == null) "not available" else "turned off"}"
+            Log.w(TAG, msg)
+            _beaconEvents.tryEmit(msg)
+            return
         }
+
+        val scanner = bluetoothAdapter.bluetoothLeScanner
+        if (scanner == null) {
+            Log.e(TAG, "Cannot start scanning: BluetoothLeScanner is null (BT may be turning off)")
+            _beaconEvents.tryEmit("Beacon scanning unavailable: Bluetooth is turning off")
+            return
+        }
+
+        val settings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+            .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
+            .setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
+            .setReportDelay(0)
+            .build()
+        scanner.startScan(emptyList<ScanFilter>(), settings, scanCallback)
+        isScanning = true
+        Log.d(TAG, "BLE scanning started (low-latency / aggressive)")
     }
 
     @SuppressLint("MissingPermission")
