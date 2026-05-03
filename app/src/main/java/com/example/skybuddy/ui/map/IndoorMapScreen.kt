@@ -68,10 +68,14 @@ import com.example.skybuddy.location.LocationTrackerService
 import com.example.skybuddy.ui.journey.GlobalStateDropdown
 import com.example.skybuddy.ui.journey.JourneyViewModel
 import com.example.skybuddy.ui.theme.BackgroundGray
+import com.example.skybuddy.ui.theme.ErrorRed
 import com.example.skybuddy.ui.theme.GlassBorder
 import com.example.skybuddy.ui.theme.SkyBlue
 import com.example.skybuddy.ui.theme.SkyIndigo
 import com.example.skybuddy.ui.theme.SkyViolet
+import com.example.skybuddy.ui.theme.SurfaceWhite
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.font.FontWeight
 
 @Composable
 fun IndoorMapScreen(
