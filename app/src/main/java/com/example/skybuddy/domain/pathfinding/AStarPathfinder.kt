@@ -26,16 +26,35 @@ class AStarPathfinder {
         override fun compareTo(other: NodeWrapper): Int = fScore.compareTo(other.fScore)
     }
 
+    // Cached collision mask — only recreated when the floor changes
+    private var cachedMask: Bitmap? = null
+    private var cachedFloorLevel: Int? = null
+
+    /** Call when the underlying map layout data changes to force a mask rebuild. */
+    fun clearCache() {
+        cachedMask?.recycle()
+        cachedMask = null
+        cachedFloorLevel = null
+    }
+
     fun findPath(layout: MapLayout, floorLevel: Int, startX: Float, startY: Float, goalId: String): List<LayoutNode> {
         Log.d("AStar", "Finding path from user($startX, $startY) to $goalId on floor $floorLevel")
         val floor = layout.floors.find { it.level == floorLevel } ?: return emptyList()
         val goalNode = floor.nodes.find { it.id == goalId } ?: return emptyList()
         val startNode = LayoutNode(id = "USER", type = "USER", x = startX, y = startY)
 
-        // 1. Create Collision Mask
+        // 1. Create or reuse Collision Mask
         val maskWidth = 2000
         val maskHeight = 2000
-        val mask = createCollisionMask(floor, maskWidth, maskHeight)
+        val mask = if (cachedFloorLevel == floorLevel && cachedMask != null) {
+            cachedMask!!
+        } else {
+            cachedMask?.recycle()
+            val newMask = createCollisionMask(floor, maskWidth, maskHeight)
+            cachedMask = newMask
+            cachedFloorLevel = floorLevel
+            newMask
+        }
 
         // 2. Grid-based A* Search
         val step = 15 // Grid resolution. Smaller = more accurate but slower. 15 is a good balance.

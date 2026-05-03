@@ -46,6 +46,11 @@ fun DatabaseViewerDialog(
                 Text("Close", color = SkyBlue)
             }
         },
+        dismissButton = {
+            TextButton(onClick = { viewModel.clearAllData() }) {
+                Text("Clear All Data", color = StatusDelayed)
+            }
+        },
         containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Text(

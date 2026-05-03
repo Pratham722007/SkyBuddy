@@ -22,4 +22,6 @@ dependencyResolutionManagement {
 rootProject.name = "SkyBuddy"
 include(":app")
 include(":skybeacon")
+include(":shared")
+include(":skysecurity")
 
