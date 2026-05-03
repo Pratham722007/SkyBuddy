@@ -4,6 +4,12 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -15,12 +21,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.FloatingActionButton
@@ -36,8 +44,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -51,6 +61,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.skybuddy.location.LocationTrackerService
 import com.example.skybuddy.ui.journey.GlobalStateDropdown
 import com.example.skybuddy.ui.journey.JourneyViewModel
+import com.example.skybuddy.ui.theme.GlassBorder
+import com.example.skybuddy.ui.theme.SkyBlue
+import com.example.skybuddy.ui.theme.SkyIndigo
+import com.example.skybuddy.ui.theme.SkyViolet
 
 @Composable
 fun IndoorMapScreen(
@@ -67,6 +81,27 @@ fun IndoorMapScreen(
     var isVisualCalibrationMode by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
+    // Pulsing animation for blue dot
+    val pulseTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseRadius by pulseTransition.animateFloat(
+        initialValue = 18f,
+        targetValue = 32f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseR"
+    )
+    val pulseAlpha by pulseTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseA"
+    )
+
     LaunchedEffect(Unit) {
         val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         if (granted) {
@@ -79,7 +114,7 @@ fun IndoorMapScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFF0D1117))) {
         GlobalStateDropdown(
             viewModel = journeyViewModel,
             modifier = Modifier
@@ -91,14 +126,13 @@ fun IndoorMapScreen(
             val canvasWidth = constraints.maxWidth.toFloat()
             val canvasHeight = constraints.maxHeight.toFloat()
 
-            // Calculate the translation required to center the map on the user's blue dot
             val centerMapX = (canvasWidth / 2) - (uiState.currentX * scale)
             val centerMapY = (canvasHeight / 2) - (uiState.currentY * scale)
 
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF0F0F0))
+                    .background(Color(0xFF0D1117))
                     .pointerInput(Unit) {
                         detectTransformGestures { _, pan, zoom, _ ->
                             scale = (scale * zoom).coerceIn(0.5f, 5f)
@@ -112,18 +146,25 @@ fun IndoorMapScreen(
                         translationY = centerMapY + offset.y
                     )
             ) {
-                // Draw map layout
+                // Draw map layout — glowing cyan strokes
                 val floor = uiState.layout?.floors?.find { it.level == uiState.currentFloor }
                 floor?.paths?.forEach { pathString ->
                     val path = PathParser().parsePathString(pathString).toPath()
+                    // Glow layer
                     drawPath(
                         path = path,
-                        color = Color.DarkGray,
-                        style = Stroke(width = 8f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                        color = SkyBlue.copy(alpha = 0.1f),
+                        style = Stroke(width = 16f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                    )
+                    // Main stroke
+                    drawPath(
+                        path = path,
+                        color = SkyBlue.copy(alpha = 0.6f),
+                        style = Stroke(width = 4f, cap = StrokeCap.Round, join = StrokeJoin.Round)
                     )
                 }
 
-                // Draw pathfinding route
+                // Draw pathfinding route — gradient path
                 if (uiState.currentPath.size > 1) {
                     val pathPath = Path().apply {
                         moveTo(uiState.currentPath.first().x, uiState.currentPath.first().y)
@@ -131,40 +172,64 @@ fun IndoorMapScreen(
                             lineTo(uiState.currentPath[i].x, uiState.currentPath[i].y)
                         }
                     }
+                    // Glow
                     drawPath(
                         path = pathPath,
-                        color = Color.Blue,
-                        style = Stroke(width = 10f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                        color = SkyIndigo.copy(alpha = 0.15f),
+                        style = Stroke(width = 18f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                    )
+                    // Route line
+                    drawPath(
+                        path = pathPath,
+                        brush = Brush.linearGradient(
+                            colors = listOf(SkyBlue, SkyViolet),
+                            start = Offset(uiState.currentPath.first().x, uiState.currentPath.first().y),
+                            end = Offset(uiState.currentPath.last().x, uiState.currentPath.last().y)
+                        ),
+                        style = Stroke(
+                            width = 6f,
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round,
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f))
+                        )
                     )
                 }
 
-                // Draw directional indicator
+                // Directional indicator
                 val arrowLength = 40f
                 val endX = uiState.currentX + kotlin.math.sin(uiState.currentHeading) * arrowLength
                 val endY = uiState.currentY - kotlin.math.cos(uiState.currentHeading) * arrowLength
                 drawLine(
-                    color = Color.Blue,
+                    color = SkyBlue,
                     start = Offset(uiState.currentX, uiState.currentY),
                     end = Offset(endX, endY),
-                    strokeWidth = 8f,
+                    strokeWidth = 5f,
                     cap = StrokeCap.Round
                 )
 
-                // Draw Blue Dot for user position
+                // Blue dot — pulsing
                 drawCircle(
-                    color = Color.Blue.copy(alpha = 0.3f),
-                    radius = 24f,
+                    brush = Brush.radialGradient(
+                        colors = listOf(SkyBlue.copy(alpha = pulseAlpha), Color.Transparent),
+                        center = Offset(uiState.currentX, uiState.currentY),
+                        radius = pulseRadius
+                    ),
+                    radius = pulseRadius,
                     center = Offset(uiState.currentX, uiState.currentY)
                 )
                 drawCircle(
-                    color = Color.Blue,
-                    radius = 12f,
+                    color = SkyBlue,
+                    radius = 10f,
+                    center = Offset(uiState.currentX, uiState.currentY)
+                )
+                drawCircle(
+                    color = Color.White,
+                    radius = 4f,
                     center = Offset(uiState.currentX, uiState.currentY)
                 )
             }
 
             if (isVisualCalibrationMode) {
-                // Draw fixed crosshair in the center
                 Icon(
                     imageVector = Icons.Filled.MyLocation,
                     contentDescription = "Target Crosshair",
@@ -172,13 +237,12 @@ fun IndoorMapScreen(
                     modifier = Modifier.align(Alignment.Center)
                 )
 
-                // Calibration FABs
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(16.dp)
                 ) {
-                    FloatingActionButton(
+                    StyledFab(
                         onClick = {
                             val newX = uiState.currentX - (offset.x / scale)
                             val newY = uiState.currentY - (offset.y / scale)
@@ -186,20 +250,17 @@ fun IndoorMapScreen(
                             offset = Offset.Zero
                             isVisualCalibrationMode = false
                         },
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    ) {
-                        Icon(Icons.Filled.Check, "Confirm Position")
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    FloatingActionButton(
-                        onClick = { 
+                        icon = { Icon(Icons.Filled.Check, "Confirm Position", tint = Color.White, modifier = Modifier.size(22.dp)) }
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    StyledFab(
+                        onClick = {
                             offset = Offset.Zero
-                            isVisualCalibrationMode = false 
+                            isVisualCalibrationMode = false
                         },
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ) {
-                        Icon(Icons.Filled.Close, "Cancel")
-                    }
+                        icon = { Icon(Icons.Filled.Close, "Cancel", tint = Color.White, modifier = Modifier.size(22.dp)) },
+                        isSecondary = true
+                    )
                 }
             } else {
                 NavigationBanner(
@@ -209,49 +270,42 @@ fun IndoorMapScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 )
 
-                // Regular FABs
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(16.dp)
                 ) {
-                    FloatingActionButton(
+                    StyledFab(
                         onClick = onChatClicked,
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.Chat, "Chat")
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    FloatingActionButton(
+                        icon = { Icon(Icons.AutoMirrored.Filled.Chat, "Chat", tint = Color.White, modifier = Modifier.size(22.dp)) }
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    StyledFab(
                         onClick = onHelpClicked,
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.Help, "Help")
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    FloatingActionButton(
-                        onClick = { 
+                        icon = { Icon(Icons.AutoMirrored.Filled.Help, "Help", tint = Color.White, modifier = Modifier.size(22.dp)) },
+                        isSecondary = true
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    StyledFab(
+                        onClick = {
                             offset = Offset.Zero
                             scale = 1f
                         },
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    ) {
-                        Icon(Icons.Filled.MyLocation, "Recenter")
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    FloatingActionButton(
+                        icon = { Icon(Icons.Filled.MyLocation, "Recenter", tint = Color.White, modifier = Modifier.size(22.dp)) },
+                        isSecondary = true
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    StyledFab(
                         onClick = { viewModel.simulateStep() },
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    ) {
-                        Icon(Icons.Filled.DirectionsWalk, "Simulate Step")
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    FloatingActionButton(
+                        icon = { Icon(Icons.AutoMirrored.Filled.DirectionsWalk, "Simulate Step", tint = Color.White, modifier = Modifier.size(22.dp)) },
+                        isSecondary = true
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    StyledFab(
                         onClick = { showCalibration = true },
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ) {
-                        Icon(Icons.Filled.Sync, "Change Position")
-                    }
+                        icon = { Icon(Icons.Filled.Sync, "Change Position", tint = Color.White, modifier = Modifier.size(22.dp)) },
+                        isSecondary = true
+                    )
                 }
             }
         }
@@ -272,5 +326,22 @@ fun IndoorMapScreen(
             },
             onDismiss = { showCalibration = false }
         )
+    }
+}
+
+@Composable
+private fun StyledFab(
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit,
+    isSecondary: Boolean = false
+) {
+    FloatingActionButton(
+        onClick = onClick,
+        shape = CircleShape,
+        containerColor = if (isSecondary) Color(0xFF1E293B) else SkyBlue,
+        contentColor = Color.White,
+        modifier = Modifier.size(48.dp)
+    ) {
+        icon()
     }
 }
