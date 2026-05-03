@@ -42,6 +42,7 @@ class IndoorMapViewModel @Inject constructor(
     
     private var globalStartId: String = ""
     private var globalGoalId: String = ""
+    private var randomGateId: String? = null
     
     val uiState: StateFlow<MapUiState> = combine(
         _internalState,
@@ -80,6 +81,12 @@ class IndoorMapViewModel @Inject constructor(
     private fun updatePathForPhase(phase: JourneyPhase) {
         val layout = _internalState.value.layout ?: return
         var stepText = ""
+        
+        if (randomGateId == null) {
+            val gates = layout.floors.flatMap { it.nodes }.filter { it.type == "GATE" }
+            randomGateId = if (gates.isNotEmpty()) gates.random().id else "GATE_C1"
+        }
+        val targetGate = randomGateId!!
 
         when (phase) {
             JourneyPhase.HOME, JourneyPhase.AIRPORT_ENTRANCE -> {
@@ -94,17 +101,17 @@ class IndoorMapViewModel @Inject constructor(
             }
             JourneyPhase.SECURITY_CHECKPOINT -> {
                 globalStartId = "SECURITY_CHECK"
-                globalGoalId = "GATE_4" // Gate 4 is on Floor 1
-                stepText = "Step 3: Head to Gate 4. Use the lift."
+                globalGoalId = targetGate
+                stepText = "Step 3: Head to Gate ${targetGate.replace("GATE_", "")}."
             }
             JourneyPhase.GATE -> {
-                globalStartId = "GATE_4"
-                globalGoalId = "GATE_4"
+                globalStartId = targetGate
+                globalGoalId = targetGate
                 stepText = "You have arrived at your gate."
             }
         }
 
-        var startFloor = 0
+        var startFloor = 1
         var startX = 500f
         var startY = 900f
         
@@ -137,23 +144,13 @@ class IndoorMapViewModel @Inject constructor(
     private fun recalculatePath() {
         val layout = _internalState.value.layout ?: return
         val currentFloor = _internalState.value.currentFloor
-        val goalNodeFloor = layout.floors.find { f -> f.nodes.any { it.id == globalGoalId } }?.level ?: currentFloor
-        val startNodeFloor = layout.floors.find { f -> f.nodes.any { it.id == globalStartId } }?.level ?: currentFloor
 
         if (globalStartId == globalGoalId) {
             _internalState.update { it.copy(currentPath = emptyList()) }
             return
         }
 
-        val localStartId = if (currentFloor == startNodeFloor) globalStartId else if (currentFloor == 0) "LIFT_GF" else "LIFT_FF"
-        val localGoalId = if (currentFloor == goalNodeFloor) globalGoalId else if (currentFloor == 0) "LIFT_GF" else "LIFT_FF"
-
-        if (localStartId == localGoalId) {
-             _internalState.update { it.copy(currentPath = emptyList()) }
-             return
-        }
-
-        val path = pathfinder.findPath(layout, currentFloor, localStartId, localGoalId)
+        val path = pathfinder.findPath(layout, currentFloor, globalStartId, globalGoalId)
         _internalState.update { it.copy(currentPath = path) }
     }
 

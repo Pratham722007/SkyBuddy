@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.graphicsLayer
@@ -149,22 +150,60 @@ fun IndoorMapScreen(
                         translationY = centerMapY + offset.y
                     )
             ) {
-                // Draw map layout — glowing cyan strokes
+                // Draw map layout — typed paths
                 val floor = uiState.layout?.floors?.find { it.level == uiState.currentFloor }
-                floor?.paths?.forEach { pathString ->
-                    val path = PathParser().parsePathString(pathString).toPath()
-                    // Glow layer
-                    drawPath(
-                        path = path,
-                        color = SkyBlue.copy(alpha = 0.1f),
-                        style = Stroke(width = 16f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-                    )
-                    // Main stroke
-                    drawPath(
-                        path = path,
-                        color = SkyBlue.copy(alpha = 0.6f),
-                        style = Stroke(width = 4f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-                    )
+                floor?.paths?.forEach { layoutPath ->
+                    val path = PathParser().parsePathString(layoutPath.d).toPath()
+                    
+                    when (layoutPath.type) {
+                        "boundary" -> {
+                            // Hollow outer boundary
+                            drawPath(
+                                path = path,
+                                color = SkyBlue.copy(alpha = 0.1f),
+                                style = Stroke(width = 16f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                            )
+                            drawPath(
+                                path = path,
+                                color = SkyBlue.copy(alpha = 0.6f),
+                                style = Stroke(width = 4f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                            )
+                        }
+                        "wall" -> {
+                            // Strict linear barriers
+                            drawPath(
+                                path = path,
+                                color = Color(0xFF607D8B).copy(alpha = 0.8f),
+                                style = Fill
+                            )
+                            drawPath(
+                                path = path,
+                                color = Color(0xFF455A64).copy(alpha = 0.8f),
+                                style = Stroke(width = 2f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                            )
+                        }
+                        "island" -> {
+                            // Filled solid organic loops
+                            drawPath(
+                                path = path,
+                                color = Color(0xFF1E293B).copy(alpha = 0.6f),
+                                style = Fill
+                            )
+                            drawPath(
+                                path = path,
+                                color = SkyBlue.copy(alpha = 0.3f),
+                                style = Stroke(width = 2f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                            )
+                        }
+                        else -> {
+                            // Default fallback
+                            drawPath(
+                                path = path,
+                                color = SkyBlue.copy(alpha = 0.6f),
+                                style = Stroke(width = 4f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                            )
+                        }
+                    }
                 }
 
                 // Draw POIs

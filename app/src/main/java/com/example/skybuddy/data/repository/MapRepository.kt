@@ -16,12 +16,17 @@ data class MapLayout(
 )
 
 @JsonClass(generateAdapter = true)
+data class LayoutPath(
+    val type: String,
+    val d: String
+)
+
+@JsonClass(generateAdapter = true)
 data class FloorLayout(
     val level: Int,
     val name: String,
-    val paths: List<String>,
-    val nodes: List<LayoutNode>,
-    val edges: List<LayoutEdge>
+    val paths: List<LayoutPath>,
+    val nodes: List<LayoutNode>
 )
 
 @JsonClass(generateAdapter = true)
@@ -30,13 +35,6 @@ data class LayoutNode(
     val type: String,
     val x: Float,
     val y: Float
-)
-
-@JsonClass(generateAdapter = true)
-data class LayoutEdge(
-    val from: String,
-    val to: String,
-    val distance: Float
 )
 
 @Singleton

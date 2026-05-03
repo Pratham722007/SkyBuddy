@@ -65,7 +65,7 @@ class LiteRtLlmEngine @Inject constructor(
         progress(InitStage.OpeningModel)
 
         val textBackend = LiteRtBackend.CPU()
-        val visionBackend = if (acceleration.isGpuAvailable()) LiteRtBackend.GPU() else LiteRtBackend.CPU()
+        val visionBackend = LiteRtBackend.GPU()
         val config = EngineConfig(
             modelPath = modelPath,
             backend = textBackend,
