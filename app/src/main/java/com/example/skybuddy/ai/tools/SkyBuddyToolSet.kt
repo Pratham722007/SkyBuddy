@@ -1,5 +1,6 @@
 package com.example.skybuddy.ai.tools
 
+import com.example.skybuddy.data.db.TimelineEventDao
 import com.example.skybuddy.data.repository.FlightRepository
 import com.example.skybuddy.data.repository.LuggageRepository
 import com.example.skybuddy.data.repository.ReceiptRepository
@@ -18,7 +19,8 @@ import javax.inject.Singleton
 class SkyBuddyToolSet @Inject constructor(
     private val flightRepository: FlightRepository,
     private val luggageRepository: LuggageRepository,
-    private val receiptRepository: ReceiptRepository
+    private val receiptRepository: ReceiptRepository,
+    private val timelineEventDao: TimelineEventDao
 ) : ToolSet {
 
     private val activeFlight = AtomicReference<String?>(null)
@@ -48,7 +50,7 @@ class SkyBuddyToolSet @Inject constructor(
     fun saveBag(
         @ToolParam(description = "A detailed 1-2 sentence description of the bag based on the image provided.")
         description: String
-    ): String = bridge {
+    ): String = bridge("Saving luggage description...") {
         didQueryLuggage = true
         luggageRepository.save(description, activeFlightNumber)
         if (activeFlightNumber != null) "SUCCESS: Bag saved for flight $activeFlightNumber."
@@ -56,7 +58,7 @@ class SkyBuddyToolSet @Inject constructor(
     }
 
     @Tool(description = "Retrieve the saved visual description of the user's checked luggage for the active flight. Use this when the user asks what their bag looks like or says they lost their bag.")
-    fun getBagDescription(): Map<String, String> = bridge {
+    fun getBagDescription(): Map<String, String> = bridge("Retrieving luggage description...") {
         didQueryLuggage = true
         val bag = activeFlightNumber?.let { luggageRepository.latestForFlight(it) }
             ?: luggageRepository.latest()
@@ -65,7 +67,7 @@ class SkyBuddyToolSet @Inject constructor(
     }
 
     @Tool(description = "Retrieve the saved expense receipts for the active flight. Use this when the user asks about their expenses for this trip.")
-    fun getReceipts(): List<Map<String, String>> = bridge {
+    fun getReceipts(): List<Map<String, String>> = bridge("Checking saved receipts...") {
         didQueryReceipts = true
         val rows = activeFlightNumber?.let { receiptRepository.allForFlight(it) }
             ?: receiptRepository.all()
@@ -79,7 +81,7 @@ class SkyBuddyToolSet @Inject constructor(
     }
 
     @Tool(description = "Get real-time status, gate, terminal, time and seat for the active flight. The flight is known from the chat context.")
-    fun getFlightStatus(): Map<String, Any> = bridge {
+    fun getFlightStatus(): Map<String, Any> = bridge("Checking live flight data...") {
         val number = activeFlightNumber ?: return@bridge mapOf("error" to "No active flight in this chat.")
         didTouchFlight = true
         val entity = flightRepository.getFlight(number)
@@ -98,7 +100,7 @@ class SkyBuddyToolSet @Inject constructor(
     fun checkLoungeAccess(
         @ToolParam(description = "The credit card name, e.g. Amex Platinum or Chase Sapphire")
         creditCard: String
-    ): String = bridge {
+    ): String = bridge("Checking lounge access privileges...") {
         val terminal = activeFlightNumber
             ?.let { flightRepository.getFlight(it) }
             ?.terminal
@@ -117,7 +119,7 @@ class SkyBuddyToolSet @Inject constructor(
     }
 
     @Tool(description = "Check seat details and comfort information for the user's seat on the active flight. Reads the seat from the active flight context.")
-    fun checkSeatDetails(): String = bridge {
+    fun checkSeatDetails(): String = bridge("Checking seat details...") {
         val number = activeFlightNumber ?: return@bridge "No active flight."
         val seat = flightRepository.getFlight(number)?.seat
         if (seat.isNullOrBlank() || seat.equals("Unknown", true)) {
@@ -129,7 +131,7 @@ class SkyBuddyToolSet @Inject constructor(
     fun setMySeat(
         @ToolParam(description = "The seat number, e.g. 12A, 4C, 27F.")
         seatNumber: String
-    ): String = bridge {
+    ): String = bridge("Saving seat number...") {
         val number = activeFlightNumber ?: return@bridge "No active flight to update."
         val seat = seatNumber.trim().uppercase()
         if (!seat.matches(Regex("^\\d{1,3}[A-K]$"))) return@bridge "Seat '$seatNumber' does not look like a valid seat number."
@@ -143,7 +145,7 @@ class SkyBuddyToolSet @Inject constructor(
         @ToolParam(description = "The vendor or restaurant name on the receipt.") vendor: String,
         @ToolParam(description = "The total amount paid.") amount: String,
         @ToolParam(description = "The currency of the transaction, e.g. USD or EUR.") currency: String
-    ): String = bridge {
+    ): String = bridge("Saving expense receipt...") {
         didQueryReceipts = true
         receiptRepository.save(vendor, amount, currency, activeFlightNumber)
         if (activeFlightNumber != null) "SUCCESS: Receipt saved for flight $activeFlightNumber."
@@ -158,9 +160,19 @@ class SkyBuddyToolSet @Inject constructor(
         else -> "Seat $seat is a middle seat."
     }
 
-    private fun <T> bridge(block: suspend () -> T): T = runBlocking {
+    private fun <T> bridge(logMessage: String, block: suspend () -> T): T = runBlocking {
         withTimeout(TOOL_TIMEOUT_MS) {
-            withContext(Dispatchers.IO) { block() }
+            withContext(Dispatchers.IO) {
+                timelineEventDao.insert(
+                    com.example.skybuddy.data.db.TimelineEventEntity(
+                        timestamp = System.currentTimeMillis(),
+                        role = "SYSTEM",
+                        uiComponentType = "TOOL_CALL_CARD",
+                        content = logMessage
+                    )
+                )
+                block()
+            }
         }
     }
 
