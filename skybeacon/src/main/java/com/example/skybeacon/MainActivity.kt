@@ -136,13 +136,12 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("MissingPermission")
     private fun startAdvertising(payload: String) {
         if (advertiser == null) return
-        if (isAdvertising) stopAdvertising()
 
-        val settings = AdvertiseSettings.Builder()
-            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
-            .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
-            .setConnectable(false)
-            .build()
+        // Always try to stop first — isAdvertising is set asynchronously
+        // by the callback, so it may not reflect the true BLE stack state.
+        // Calling stopAdvertising when not advertising is harmless.
+        try { advertiser?.stopAdvertising(advertiseCallback) } catch (_: SecurityException) {}
+        isAdvertising = false
 
         // adapter.name setter requires BLUETOOTH_CONNECT at runtime.
         val adapter = (getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
@@ -152,6 +151,12 @@ class MainActivity : AppCompatActivity() {
             statusText.text = "Need BLUETOOTH_CONNECT permission. Tap again after granting."
             return
         }
+
+        val settings = AdvertiseSettings.Builder()
+            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+            .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
+            .setConnectable(false)
+            .build()
 
         // The 31-byte advertisement is too small for our payload, so we put the
         // device name in the scan response (its own 31-byte budget) and keep the
@@ -173,19 +178,16 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("MissingPermission")
     private fun stopAdvertising() {
-        if (!isAdvertising || advertiser == null) return
         try {
             advertiser?.stopAdvertising(advertiseCallback)
-        } catch (e: SecurityException) {
-            // Permission revoked between start and stop; nothing to do.
-        }
+        } catch (_: SecurityException) {}
         isAdvertising = false
         statusText.text = "Stopped Advertising"
 
         val adapter = (getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
         try {
             adapter.name = "Android"
-        } catch (e: Exception) {}
+        } catch (_: Exception) {}
     }
 
     private val advertiseCallback = object : AdvertiseCallback() {
