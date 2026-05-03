@@ -17,7 +17,7 @@ class EvaluateAmbientBeaconUseCase @Inject constructor(
             title = "$locationName RECEIVED",
             message = beaconPayload
         )
-        val prompt = "User is at $locationName. Beacon payload: '$beaconPayload'. Act as an intelligent travel assistant. Write exactly 1 sentence of helpful, engaging information or a tip related to this location and payload. Do not add any conversational preamble or explain what the beacon is."
+        val prompt = "User is at $locationName. Beacon payload: '$beaconPayload'. Act as an intelligent airport  assistant. Write exactly 1 sentence of helpful, engaging information or a tip related to this location and payload. Do not add any conversational preamble or explain what the beacon is."
         val response = llmEngine.generateOneOffText(prompt)
         
         timelineEventDao.insert(
