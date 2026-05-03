@@ -62,7 +62,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.asAndroidPath
+
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.PathParser as SvgPathParser
@@ -447,74 +447,6 @@ private fun DrawScope.drawAirportEnvironment(bounds: MapBounds) {
     nc.drawText("N", compassCx, compassCy - compassR - 8f, compassLabel)
 }
 
-/** Fine dot grid across the full map canvas (outside + inside terminal) — mobile map "paper". */
-private fun DrawScope.drawWorldBaseTexture(bounds: MapBounds) {
-    val m = WorldTextureMargin
-    val minX = bounds.minX - m
-    val maxX = bounds.maxX + m
-    val minY = bounds.minY - m
-    val maxY = bounds.maxY + m
-    val nc = drawContext.canvas.nativeCanvas
-    val neutral = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.argb(20, 110, 110, 125)
-    }
-    val tint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.argb(14, 107, 33, 232)
-    }
-    val step = 18f
-    var x = minX
-    while (x <= maxX) {
-        var y = minY
-        while (y <= maxY) {
-            nc.drawCircle(x, y, 0.7f, neutral)
-            val ix = kotlin.math.floor((x / step).toDouble()).toInt()
-            val iy = kotlin.math.floor((y / step).toDouble()).toInt()
-            if ((ix + iy) and 1 == 0) {
-                nc.drawCircle(x + step * 0.5f, y + step * 0.5f, 0.4f, tint)
-            }
-            y += step
-        }
-        x += step
-    }
-}
-
-/** Richer dotted texture clipped to the terminal outline (extra depth on the floor plate). */
-private fun DrawScope.drawTerrainTexture(
-    boundaryPathData: String?,
-    bounds: MapBounds
-) {
-    val d = boundaryPathData ?: return
-    val clip = try {
-        SvgPathParser().parsePathString(d).toPath().asAndroidPath()
-    } catch (_: Throwable) {
-        return
-    }
-    val nc = drawContext.canvas.nativeCanvas
-    nc.save()
-    nc.clipPath(clip)
-    val purpleDot = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.argb(42, 107, 33, 232)
-    }
-    val neutralDot = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.argb(28, 120, 120, 135)
-    }
-    val step = 20f
-    var x = bounds.minX
-    while (x <= bounds.maxX) {
-        var y = bounds.minY
-        while (y <= bounds.maxY) {
-            nc.drawCircle(x, y, 1.15f, purpleDot)
-            val ix = kotlin.math.floor((x / step).toDouble()).toInt()
-            val iy = kotlin.math.floor((y / step).toDouble()).toInt()
-            if ((ix + iy) and 1 == 0) {
-                nc.drawCircle(x + step * 0.5f, y + step * 0.5f, 0.65f, neutralDot)
-            }
-            y += step
-        }
-        x += step
-    }
-    nc.restore()
-}
 
 /** Soft vignette so the floor doesn’t read as a flat solid. */
 private fun DrawScope.drawFloorAtmosphere(bounds: MapBounds) {
@@ -720,6 +652,14 @@ fun IndoorMapScreen(
         }
     }
 
+    // Pre-parse SVG paths once per layout/floor change (avoids re-parsing every frame)
+    val cachedPaths = remember(uiState.layout, uiState.currentFloor) {
+        val floor = uiState.layout?.floors?.find { it.level == uiState.currentFloor }
+        floor?.paths?.associate { layoutPath ->
+            layoutPath.d to SvgPathParser().parsePathString(layoutPath.d).toPath()
+        } ?: emptyMap()
+    }
+
     Box(modifier = Modifier.fillMaxSize().background(MapCanvasBackground)) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val canvasWidth = constraints.maxWidth.toFloat()
@@ -751,11 +691,10 @@ fun IndoorMapScreen(
 
                 drawWorldBackground(mapBoundsEarly)
                 drawAirportEnvironment(mapBoundsEarly)
-                drawWorldBaseTexture(mapBoundsEarly)
 
                 // Pass 1 — fills (floor plate, structures) so the map reads as space, not just lines
                 paths.forEach { layoutPath ->
-                    val path = SvgPathParser().parsePathString(layoutPath.d).toPath()
+                    val path = cachedPaths[layoutPath.d] ?: return@forEach
                     when (layoutPath.type) {
                         "boundary" -> {
                             drawPath(path = path, color = FloorPlateColor, style = Fill)
@@ -769,13 +708,11 @@ fun IndoorMapScreen(
 
                 val mapNodes = mapNodesEarly
                 val mapBounds = mapBoundsEarly
-                val boundarySvg = floor?.paths?.firstOrNull { it.type == "boundary" }?.d
                 drawFloorAtmosphere(mapBounds)
-                drawTerrainTexture(boundarySvg, mapBounds)
 
                 // Pass 2 — edges / outlines
                 paths.forEach { layoutPath ->
-                    val path = SvgPathParser().parsePathString(layoutPath.d).toPath()
+                    val path = cachedPaths[layoutPath.d] ?: return@forEach
                     when (layoutPath.type) {
                         "boundary" -> {
                             drawPath(
