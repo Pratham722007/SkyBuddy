@@ -59,7 +59,7 @@ fun DatabaseViewerDialog(
                 modifier = Modifier.heightIn(max = 480.dp).fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                item { SectionHeader("✈️ Flights", state.flights.size, SkyBlue) }
+                item { SectionHeader("Flights", state.flights.size, SkyBlue) }
                 items(state.flights, key = { it.flightNumber }) { f ->
                     Text(
                         "${f.flightNumber}  ${f.origin}→${f.destination}  ${f.status}",
@@ -77,7 +77,7 @@ fun DatabaseViewerDialog(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        SectionHeader("🧳 Luggage", state.luggage.size, SkyIndigo)
+                        SectionHeader("Luggage", state.luggage.size, SkyIndigo)
                         TextButton(onClick = viewModel::clearLuggage) {
                             Text("Clear", color = StatusDelayed, style = MaterialTheme.typography.labelSmall)
                         }
@@ -100,7 +100,7 @@ fun DatabaseViewerDialog(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        SectionHeader("🧾 Receipts", state.receipts.size, SkyViolet)
+                        SectionHeader("Receipts", state.receipts.size, SkyViolet)
                         TextButton(onClick = viewModel::clearReceipts) {
                             Text("Clear", color = StatusDelayed, style = MaterialTheme.typography.labelSmall)
                         }

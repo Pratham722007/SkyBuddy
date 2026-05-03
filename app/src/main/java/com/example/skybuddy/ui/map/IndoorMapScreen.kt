@@ -63,6 +63,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.skybuddy.location.LocationTrackerService
 import com.example.skybuddy.ui.journey.GlobalStateDropdown
 import com.example.skybuddy.ui.journey.JourneyViewModel
+import com.example.skybuddy.ui.theme.BackgroundGray
 import com.example.skybuddy.ui.theme.GlassBorder
 import com.example.skybuddy.ui.theme.SkyBlue
 import com.example.skybuddy.ui.theme.SkyIndigo
@@ -116,12 +117,12 @@ fun IndoorMapScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFF0D1117))) {
+    Column(modifier = Modifier.fillMaxSize().background(BackgroundGray)) {
         GlobalStateDropdown(
             viewModel = journeyViewModel,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 10.dp)
         )
 
         BoxWithConstraints(modifier = Modifier.weight(1f)) {

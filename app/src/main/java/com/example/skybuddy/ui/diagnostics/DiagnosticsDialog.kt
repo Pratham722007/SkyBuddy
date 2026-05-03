@@ -53,26 +53,24 @@ fun DiagnosticsDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                DiagnosticRow("🧠", "LLM", state.llm)
-                DiagnosticRow("🔊", "Text-to-speech", state.tts)
-                DiagnosticRow("🎙️", "Speech-to-text", state.stt)
-                DiagnosticRow("💾", "Database", state.database)
-                DiagnosticRow("🌐", "Network", state.network)
+                DiagnosticRow("LLM", state.llm)
+                DiagnosticRow("Text-to-speech", state.tts)
+                DiagnosticRow("Speech-to-text", state.stt)
+                DiagnosticRow("Database", state.database)
+                DiagnosticRow("Network", state.network)
             }
         }
     )
 }
 
 @Composable
-private fun DiagnosticRow(icon: String, label: String, status: ComponentStatus) {
+private fun DiagnosticRow(label: String, status: ComponentStatus) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(vertical = 2.dp)
     ) {
         StatusDot(status)
         Spacer(Modifier.width(10.dp))
-        Text(icon, style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.width(8.dp))
         Text(
             "$label: ${describe(status)}",
             style = MaterialTheme.typography.bodyMedium,

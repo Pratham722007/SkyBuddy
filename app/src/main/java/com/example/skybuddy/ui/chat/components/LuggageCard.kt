@@ -29,7 +29,7 @@ fun LuggageCard(luggage: LuggageEntity) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "🧳 Luggage",
+                    "Luggage",
                     style = MaterialTheme.typography.labelLarge,
                     color = SkyBlue
                 )

@@ -31,7 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.FlightLand
 import androidx.compose.material.icons.filled.FlightTakeoff
@@ -86,8 +86,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
-    onOpenChat: (String?) -> Unit,
-    onOpenFlightInfo: (String) -> Unit = {},
+    onFlightTapped: (String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val ui by viewModel.ui.collectAsState()
@@ -393,54 +392,6 @@ fun HomeScreen(
             }
         }
 
-        // ── Live Tracking Card ──
-        item {
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn(tween(500, delayMillis = 300)) + slideInVertically(tween(500, delayMillis = 300)) { it / 4 }
-            ) {
-                GlassCard(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Live badge
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(LiveBadgeRed)
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            Text("Live", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "Real-Time Updates",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = OnSurfaceDim
-                            )
-                            Text(
-                                "Track Today's Flights",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = OnSurfaceDark
-                            )
-                        }
-                        // ARR / DEP pills
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedPill("ARR", Icons.Filled.FlightLand) {
-                                viewModel.onTabSelected(FlightTab.ARRIVAL)
-                            }
-                            OutlinedPill("DEP", Icons.Filled.FlightTakeoff) {
-                                viewModel.onTabSelected(FlightTab.DEPARTURE)
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
         // ── Explore & Fly Grid ──
         item {
@@ -476,7 +427,7 @@ fun HomeScreen(
                         ExploreItem(Icons.Filled.FlightTakeoff, "Flight\nStatus", Color(0xFF6B21E8)) { /* Already on this screen */ }
                         ExploreItem(Icons.Filled.Info, "Services", Color(0xFFEA580C)) { /* Explore tab */ }
                         ExploreItem(Icons.Filled.Map, "Way-\nfinding", Color(0xFF0891B2)) { /* Map tab */ }
-                        ExploreItem(Icons.Filled.Chat, "SkyBuddy\nChat", Color(0xFF16A34A)) { onOpenChat(null) }
+                        ExploreItem(Icons.AutoMirrored.Filled.Chat, "SkyBuddy\nChat", Color(0xFF16A34A)) { /* Select a flight first */ }
                     }
                 }
             }
@@ -491,7 +442,7 @@ fun HomeScreen(
             items(upcoming, key = { it.flightNumber }) { flight ->
                 ExpandableFlightCard(
                     flight = flight,
-                    onClick = { onOpenFlightInfo(flight.flightNumber) }
+                    onClick = { onFlightTapped(flight.flightNumber) }
                 )
             }
         }
@@ -504,7 +455,7 @@ fun HomeScreen(
             items(past, key = { it.flightNumber }) { flight ->
                 ExpandableFlightCard(
                     flight = flight,
-                    onClick = { onOpenFlightInfo(flight.flightNumber) }
+                    onClick = { onFlightTapped(flight.flightNumber) }
                 )
             }
         }

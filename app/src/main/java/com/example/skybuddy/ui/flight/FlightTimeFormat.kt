@@ -23,7 +23,20 @@ fun formatFlightTime(raw: String): String {
     } catch (_: Exception) { raw }
 }
 
+/** Full date + time display: "May 3, 11:32" */
 fun formatFlightDate(epochMillis: Long): String {
     if (epochMillis <= 0) return ""
     return SimpleDateFormat("MMM d, HH:mm", Locale.US).format(Date(epochMillis))
+}
+
+/** Date-only display for compact chips: "May 3" */
+fun formatFlightDateShort(epochMillis: Long): String {
+    if (epochMillis <= 0) return ""
+    return SimpleDateFormat("MMM d", Locale.US).format(Date(epochMillis))
+}
+
+/** Time-only from epoch: "05:35" */
+fun formatFlightTimeFromEpoch(epochMillis: Long): String {
+    if (epochMillis <= 0) return "--:--"
+    return SimpleDateFormat("HH:mm", Locale.US).format(Date(epochMillis))
 }

@@ -26,7 +26,7 @@ class EvaluateAmbientBeaconUseCase @Inject constructor(
         
         notificationHelper.notifyFlightUpdate(
             flightNumber = "BEACON", // Reusing the notification method for debugging
-            title = "📍 Beacon Intercepted: $locationName",
+            title = "Beacon Intercepted: $locationName",
             message = response.trim()
         )
     }

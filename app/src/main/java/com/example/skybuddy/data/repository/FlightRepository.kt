@@ -17,6 +17,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -87,7 +89,7 @@ class FlightRepository @Inject constructor(
                 time = schedule.depTime ?: "Unknown",
                 seat = "Unknown",
                 lastSyncedAt = clock.nowMillis(),
-                departureTimeEpoch = clock.nowMillis(),
+                departureTimeEpoch = schedule.depTimeTs?.let { it * 1000L } ?: parseDepartureEpoch(schedule.depTimeUtc ?: schedule.depTime),
                 trackingState = state.name
             )
             flightDao.upsert(flight)
@@ -130,4 +132,34 @@ class FlightRepository @Inject constructor(
     }
 
     companion object { private const val TAG = "FlightRepository" }
+
+    /** Parse departure time string from API into epoch millis. */
+    private fun parseDepartureEpoch(depTime: String?): Long {
+        if (depTime.isNullOrBlank()) return clock.nowMillis()
+        val patterns = listOf(
+            "yyyy-MM-dd HH:mm",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm",
+            "HH:mm"
+        )
+        for (pattern in patterns) {
+            try {
+                val sdf = SimpleDateFormat(pattern, Locale.US)
+                val date = sdf.parse(depTime) ?: continue
+                val epoch = date.time
+                // If pattern was "HH:mm" only, the date defaults to Jan 1 1970.
+                // In that case, use today's date with the parsed time.
+                if (epoch < 86_400_000L) {
+                    val now = java.util.Calendar.getInstance()
+                    now.set(java.util.Calendar.HOUR_OF_DAY, date.hours)
+                    now.set(java.util.Calendar.MINUTE, date.minutes)
+                    now.set(java.util.Calendar.SECOND, 0)
+                    now.set(java.util.Calendar.MILLISECOND, 0)
+                    return now.timeInMillis
+                }
+                return epoch
+            } catch (_: Exception) { /* try next */ }
+        }
+        return clock.nowMillis()
+    }
 }

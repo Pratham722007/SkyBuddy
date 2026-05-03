@@ -10,6 +10,8 @@ import com.example.skybuddy.data.repository.FlightRepository
 import com.example.skybuddy.vision.MlKitBarcodeScanner
 import com.example.skybuddy.work.AlarmScheduler
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -88,7 +90,7 @@ class IngestFlightUseCase @Inject constructor(
                 time = time,
                 seat = seat,
                 lastSyncedAt = clock.nowMillis(),
-                departureTimeEpoch = clock.nowMillis() + (24 * 60 * 60 * 1000), // Default to 24h later
+                departureTimeEpoch = parseDepartureEpoch(time, clock.nowMillis()),
                 trackingState = TrackingState.TRACKING.name
             )
 
@@ -98,5 +100,33 @@ class IngestFlightUseCase @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    /** Parse departure time string into epoch millis. */
+    private fun parseDepartureEpoch(depTime: String?, fallback: Long): Long {
+        if (depTime.isNullOrBlank()) return fallback
+        val patterns = listOf(
+            "yyyy-MM-dd HH:mm",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm",
+            "HH:mm"
+        )
+        for (pattern in patterns) {
+            try {
+                val sdf = SimpleDateFormat(pattern, Locale.US)
+                val date = sdf.parse(depTime) ?: continue
+                val epoch = date.time
+                if (epoch < 86_400_000L) {
+                    val now = java.util.Calendar.getInstance()
+                    now.set(java.util.Calendar.HOUR_OF_DAY, date.hours)
+                    now.set(java.util.Calendar.MINUTE, date.minutes)
+                    now.set(java.util.Calendar.SECOND, 0)
+                    now.set(java.util.Calendar.MILLISECOND, 0)
+                    return now.timeInMillis
+                }
+                return epoch
+            } catch (_: Exception) { /* try next */ }
+        }
+        return fallback
     }
 }

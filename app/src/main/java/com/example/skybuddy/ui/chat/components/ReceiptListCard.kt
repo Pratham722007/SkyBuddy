@@ -26,7 +26,7 @@ fun ReceiptListCard(receipts: List<ReceiptEntity>) {
     GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                "🧾 Receipts (${receipts.size})",
+                "Receipts (${receipts.size})",
                 style = MaterialTheme.typography.labelLarge,
                 color = SkyIndigo
             )

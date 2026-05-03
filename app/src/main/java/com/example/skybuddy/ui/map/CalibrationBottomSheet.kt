@@ -13,10 +13,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DoorBack
+import androidx.compose.material.icons.filled.FlightTakeoff
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Luggage
+import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -35,19 +45,32 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.example.skybuddy.data.repository.LayoutNode
-import com.example.skybuddy.ui.theme.GlassWhite
-import com.example.skybuddy.ui.theme.OnDarkSurfaceDim
-import com.example.skybuddy.ui.theme.SkyBlue
+import com.example.skybuddy.ui.theme.OnSurfaceDark
+import com.example.skybuddy.ui.theme.OnSurfaceDim
+import com.example.skybuddy.ui.theme.PrimaryPurple
 
-private fun nodeIcon(type: String): String = when (type.uppercase()) {
-    "DOOR" -> "🚪"
-    "BAGGAGE" -> "🛄"
-    "CHECKPOINT" -> "🔒"
-    "GATE" -> "🛫"
-    "SHOP" -> "🛍️"
-    else -> "📍"
+private fun nodeIcon(type: String): ImageVector = when (type.uppercase()) {
+    "DOOR" -> Icons.Filled.DoorBack
+    "BAGGAGE" -> Icons.Filled.Luggage
+    "CHECKPOINT" -> Icons.Filled.Lock
+    "GATE" -> Icons.Filled.FlightTakeoff
+    "SHOP" -> Icons.Filled.ShoppingBag
+    "RESTAURANT", "CAFE" -> Icons.Filled.LocalCafe
+    else -> Icons.Filled.LocationOn
+}
+
+private fun nodeColor(type: String): Color = when (type.uppercase()) {
+    "DOOR" -> Color(0xFF81C784)
+    "BAGGAGE" -> Color(0xFFFFB74D)
+    "CHECKPOINT" -> Color(0xFFE57373)
+    "GATE" -> Color(0xFF64B5F6)
+    "SHOP" -> Color(0xFFBA68C8)
+    "RESTAURANT", "CAFE" -> Color(0xFFBA68C8)
+    else -> Color.Gray
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,25 +88,25 @@ fun CalibrationBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = Color.White,
         tonalElevation = 0.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 "Calibrate Position",
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = OnSurfaceDark
             )
             Spacer(Modifier.height(16.dp))
 
             TabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = SkyBlue,
+                containerColor = Color(0xFFF5F5F7),
+                contentColor = PrimaryPurple,
                 indicator = { tabPositions ->
                     TabRowDefaults.SecondaryIndicator(
                         modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = SkyBlue
+                        color = PrimaryPurple
                     )
                 }
             ) {
@@ -94,7 +117,7 @@ fun CalibrationBottomSheet(
                         text = {
                             Text(
                                 title,
-                                color = if (selectedTab == index) SkyBlue else OnDarkSurfaceDim
+                                color = if (selectedTab == index) PrimaryPurple else OnSurfaceDim
                             )
                         }
                     )
@@ -111,12 +134,12 @@ fun CalibrationBottomSheet(
                     Text(
                         "Drag the map so the crosshair aligns with your real-world location.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = OnDarkSurfaceDim
+                        color = OnSurfaceDim
                     )
                     Spacer(Modifier.height(16.dp))
                     Button(
                         onClick = { onVisualCalibrate() },
-                        colors = ButtonDefaults.buttonColors(containerColor = SkyBlue)
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
                     ) {
                         Text("Start Visual Calibration")
                     }
@@ -127,7 +150,7 @@ fun CalibrationBottomSheet(
                         Surface(
                             onClick = { onSemanticCalibrate(node) },
                             modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.surface
+                            color = Color.White
                         ) {
                             Row(
                                 modifier = Modifier
@@ -137,27 +160,37 @@ fun CalibrationBottomSheet(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        nodeIcon(node.type),
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                            .background(nodeColor(node.type).copy(alpha = 0.1f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            nodeIcon(node.type),
+                                            contentDescription = null,
+                                            tint = nodeColor(node.type),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
                                     Spacer(Modifier.width(10.dp))
                                     Text(
-                                        node.id,
+                                        node.id.replace("_", " "),
                                         style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = OnSurfaceDark
                                     )
                                 }
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(GlassWhite)
+                                        .background(Color(0xFFF5F5F7))
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
                                     Text(
                                         node.type,
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = OnDarkSurfaceDim
+                                        color = OnSurfaceDim
                                     )
                                 }
                             }
@@ -171,7 +204,7 @@ fun CalibrationBottomSheet(
                 onClick = onDismiss,
                 modifier = Modifier.align(Alignment.End)
             ) {
-                Text("Cancel", color = OnDarkSurfaceDim)
+                Text("Cancel", color = OnSurfaceDim)
             }
         }
     }
