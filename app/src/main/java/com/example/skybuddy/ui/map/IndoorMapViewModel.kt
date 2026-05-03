@@ -84,16 +84,16 @@ class IndoorMapViewModel @Inject constructor(
         when (phase) {
             JourneyPhase.HOME, JourneyPhase.AIRPORT_ENTRANCE -> {
                 globalStartId = "ENTRANCE"
-                globalGoalId = "BAGGAGE"
+                globalGoalId = "BAGGAGE_DROP"
                 stepText = "Step 1: Proceed to Baggage Drop."
             }
             JourneyPhase.BAGGAGE_DROP -> {
-                globalStartId = "BAGGAGE"
-                globalGoalId = "SECURITY"
+                globalStartId = "BAGGAGE_DROP"
+                globalGoalId = "SECURITY_CHECK"
                 stepText = "Step 2: Head to Security."
             }
             JourneyPhase.SECURITY_CHECKPOINT -> {
-                globalStartId = "SECURITY"
+                globalStartId = "SECURITY_CHECK"
                 globalGoalId = "GATE_4" // Gate 4 is on Floor 1
                 stepText = "Step 3: Head to Gate 4. Use the lift."
             }
@@ -145,8 +145,8 @@ class IndoorMapViewModel @Inject constructor(
             return
         }
 
-        val localStartId = if (currentFloor == startNodeFloor) globalStartId else if (currentFloor == 0) "LIFT_G" else "LIFT_1"
-        val localGoalId = if (currentFloor == goalNodeFloor) globalGoalId else if (currentFloor == 0) "LIFT_G" else "LIFT_1"
+        val localStartId = if (currentFloor == startNodeFloor) globalStartId else if (currentFloor == 0) "LIFT_GF" else "LIFT_FF"
+        val localGoalId = if (currentFloor == goalNodeFloor) globalGoalId else if (currentFloor == 0) "LIFT_GF" else "LIFT_FF"
 
         if (localStartId == localGoalId) {
              _internalState.update { it.copy(currentPath = emptyList()) }
