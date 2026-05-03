@@ -11,6 +11,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -48,18 +51,29 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.skybuddy.core.permission.rememberPermissionController
 import com.example.skybuddy.ui.chat.components.ConversationFlowItem
 import com.example.skybuddy.ui.flight.FlightSummaryCard
+import com.example.skybuddy.ui.theme.BackgroundGray
 import com.example.skybuddy.ui.theme.GlassCard
-import com.example.skybuddy.ui.theme.GlassWhite
-import com.example.skybuddy.ui.theme.LocalSkyBuddyGradients
-import com.example.skybuddy.ui.theme.OnDarkSurfaceDim
-import com.example.skybuddy.ui.theme.SkyBlue
+import com.example.skybuddy.ui.theme.OnSurfaceDark
+import com.example.skybuddy.ui.theme.OnSurfaceDim
+import com.example.skybuddy.ui.theme.PrimaryPurple
+
+private val quickReplies = listOf(
+    "Where's my gate?",
+    "Nearest restroom?",
+    "Flight status?",
+    "Food options nearby?",
+    "How to reach Terminal?",
+    "Baggage claim info"
+)
 
 @Composable
 fun ChatScreen(
@@ -74,7 +88,6 @@ fun ChatScreen(
     val voiceEvent by voiceController.events.collectAsState()
     val context = LocalContext.current
     val listState = rememberLazyListState()
-    val gradients = LocalSkyBuddyGradients.current
 
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicturePreview()
@@ -126,178 +139,233 @@ fun ChatScreen(
         if (granted) voiceController.startListening()
     }
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(gradients.screenBackground)
+            .background(BackgroundGray)
+            .padding(12.dp)
     ) {
-        Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
 
-            // ── Top bar ──
+        // ── Top bar ──
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = OnSurfaceDark,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Text(
+                if (flightNumber == "timeline" || flightNumber == null) "SkyBuddy" else flightNumber,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = PrimaryPurple,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(
+                onClick = viewModel::toggleIntercom,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (state.isIntercomMode) PrimaryPurple.copy(alpha = 0.1f)
+                        else Color.White
+                    )
+            ) {
+                Icon(
+                    if (state.isIntercomMode) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                    contentDescription = if (state.isIntercomMode) "Mute spoken replies" else "Unmute spoken replies",
+                    tint = if (state.isIntercomMode) PrimaryPurple else OnSurfaceDim,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // ── Pinned flight card ──
+        pinnedFlight?.let {
+            FlightSummaryCard(flight = it, modifier = Modifier.padding(vertical = 6.dp))
+        }
+
+        // ── Messages ──
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            state = listState,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Welcome message if empty
+            if (timelineEvents.isEmpty()) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 32.dp, bottom = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Welcome to SkyBuddy",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = OnSurfaceDark
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Ask me anything about your flight\nor Surat Airport",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = OnSurfaceDim,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            }
+            items(timelineEvents, key = { it.id }) { ConversationFlowItem(it) }
+            if (state.isThinking) {
+                item {
+                    ThinkingIndicator()
+                }
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // ── Quick Reply Chips ──
+        if (timelineEvents.isEmpty() || (!state.isThinking && state.input.isBlank())) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                quickReplies.forEach { chip ->
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color.White)
+                            .clickable {
+                                viewModel.onInputChanged(chip)
+                                viewModel.sendText()
+                            }
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            chip,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = PrimaryPurple
+                        )
+                    }
+                }
+            }
+        }
+
+        // ── Input area ──
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            cornerRadius = 24.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Mic button
                 IconButton(
-                    onClick = onBack,
+                    onClick = {
+                        val granted = ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.RECORD_AUDIO
+                        ) == PackageManager.PERMISSION_GRANTED
+                        if (granted) voiceController.startListening()
+                        else recordPermission.request(Manifest.permission.RECORD_AUDIO)
+                    },
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .background(BackgroundGray)
                 ) {
                     Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onSurface,
+                        Icons.Filled.Mic,
+                        contentDescription = "Voice input",
+                        tint = OnSurfaceDim,
                         modifier = Modifier.size(18.dp)
                     )
                 }
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    flightNumber ?: "Chat",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = SkyBlue,
-                    modifier = Modifier.weight(1f)
-                )
+
+                Spacer(Modifier.width(4.dp))
+
+                // Camera button
                 IconButton(
-                    onClick = viewModel::toggleIntercom,
+                    onClick = {
+                        val granted = ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.CAMERA
+                        ) == PackageManager.PERMISSION_GRANTED
+                        if (granted) cameraLauncher.launch(null)
+                        else cameraPermission.request(Manifest.permission.CAMERA)
+                    },
                     modifier = Modifier
                         .size(36.dp)
+                        .clip(CircleShape)
+                        .background(BackgroundGray)
+                ) {
+                    Icon(
+                        Icons.Filled.CameraAlt,
+                        contentDescription = "Camera",
+                        tint = OnSurfaceDim,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Spacer(Modifier.width(6.dp))
+
+                // Text field
+                OutlinedTextField(
+                    value = state.input,
+                    onValueChange = viewModel::onInputChanged,
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Ask SkyBuddy", color = OnSurfaceDim) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(18.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryPurple,
+                        unfocusedBorderColor = Color(0xFFE5E7EB),
+                        cursorColor = PrimaryPurple,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color(0xFFF9FAFB)
+                    )
+                )
+
+                Spacer(Modifier.width(6.dp))
+
+                // Send button
+                IconButton(
+                    onClick = { viewModel.sendText() },
+                    enabled = state.input.isNotBlank() && !state.isThinking,
+                    modifier = Modifier
+                        .size(40.dp)
                         .clip(CircleShape)
                         .background(
-                            if (state.isIntercomMode) SkyBlue.copy(alpha = 0.15f)
-                            else MaterialTheme.colorScheme.surfaceVariant
+                            if (state.input.isNotBlank() && !state.isThinking) PrimaryPurple
+                            else BackgroundGray
                         )
                 ) {
                     Icon(
-                        if (state.isIntercomMode) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                        contentDescription = if (state.isIntercomMode) "Mute spoken replies" else "Unmute spoken replies",
-                        tint = if (state.isIntercomMode) SkyBlue else OnDarkSurfaceDim,
+                        Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Send",
+                        tint = if (state.input.isNotBlank() && !state.isThinking)
+                            Color.White
+                        else OnSurfaceDim,
                         modifier = Modifier.size(18.dp)
                     )
-                }
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            // ── Pinned flight card ──
-            pinnedFlight?.let {
-                FlightSummaryCard(flight = it, modifier = Modifier.padding(vertical = 6.dp))
-            }
-
-            // ── Messages ──
-            LazyColumn(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                state = listState,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(timelineEvents, key = { it.id }) { ConversationFlowItem(it) }
-                if (state.isThinking) {
-                    item {
-                        ThinkingIndicator()
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            // ── Input area ──
-            GlassCard(
-                modifier = Modifier.fillMaxWidth(),
-                cornerRadius = 24.dp
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 6.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Mic button
-                    IconButton(
-                        onClick = {
-                            val granted = ContextCompat.checkSelfPermission(
-                                context, Manifest.permission.RECORD_AUDIO
-                            ) == PackageManager.PERMISSION_GRANTED
-                            if (granted) voiceController.startListening()
-                            else recordPermission.request(Manifest.permission.RECORD_AUDIO)
-                        },
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(GlassWhite)
-                    ) {
-                        Icon(
-                            Icons.Filled.Mic,
-                            contentDescription = "Voice input",
-                            tint = OnDarkSurfaceDim,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    Spacer(Modifier.width(4.dp))
-
-                    // Camera button
-                    IconButton(
-                        onClick = {
-                            val granted = ContextCompat.checkSelfPermission(
-                                context, Manifest.permission.CAMERA
-                            ) == PackageManager.PERMISSION_GRANTED
-                            if (granted) cameraLauncher.launch(null)
-                            else cameraPermission.request(Manifest.permission.CAMERA)
-                        },
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(GlassWhite)
-                    ) {
-                        Icon(
-                            Icons.Filled.CameraAlt,
-                            contentDescription = "Camera",
-                            tint = OnDarkSurfaceDim,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    Spacer(Modifier.width(6.dp))
-
-                    // Text field
-                    OutlinedTextField(
-                        value = state.input,
-                        onValueChange = viewModel::onInputChanged,
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Ask SkyBuddy", color = OnDarkSurfaceDim) },
-                        singleLine = true,
-                        shape = RoundedCornerShape(18.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = SkyBlue,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                            cursorColor = SkyBlue
-                        )
-                    )
-
-                    Spacer(Modifier.width(6.dp))
-
-                    // Send button
-                    IconButton(
-                        onClick = { viewModel.sendText() },
-                        enabled = state.input.isNotBlank() && !state.isThinking,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (state.input.isNotBlank() && !state.isThinking) SkyBlue
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            )
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
-                            tint = if (state.input.isNotBlank() && !state.isThinking)
-                                MaterialTheme.colorScheme.onPrimary
-                            else OnDarkSurfaceDim,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
                 }
             }
         }
@@ -331,10 +399,10 @@ private fun ThinkingIndicator() {
                     .offset(y = y.dp)
                     .size(8.dp)
                     .clip(CircleShape)
-                    .background(SkyBlue.copy(alpha = 0.6f))
+                    .background(PrimaryPurple.copy(alpha = 0.5f))
             )
         }
         Spacer(Modifier.width(6.dp))
-        Text("Thinking…", style = MaterialTheme.typography.bodySmall, color = OnDarkSurfaceDim)
+        Text("Thinking...", style = MaterialTheme.typography.bodySmall, color = OnSurfaceDim)
     }
 }

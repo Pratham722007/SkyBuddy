@@ -45,16 +45,18 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.skybuddy.core.permission.rememberMultiplePermissionsController
+import com.example.skybuddy.ui.theme.BackgroundGray
 import com.example.skybuddy.ui.theme.GlassCard
 import com.example.skybuddy.ui.theme.GradientButton
-import com.example.skybuddy.ui.theme.LocalSkyBuddyGradients
-import com.example.skybuddy.ui.theme.OnDarkSurfaceDim
-import com.example.skybuddy.ui.theme.SkyBlue
-import com.example.skybuddy.ui.theme.SkyIndigo
+import com.example.skybuddy.ui.theme.OnSurfaceDark
+import com.example.skybuddy.ui.theme.OnSurfaceDim
+import com.example.skybuddy.ui.theme.PrimaryLight
+import com.example.skybuddy.ui.theme.PrimaryPurple
 import kotlinx.coroutines.delay
 
 @Composable
@@ -99,12 +101,10 @@ fun OnboardingScreen(
         delay(250); showContent = true
     }
 
-    val gradients = LocalSkyBuddyGradients.current
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(gradients.screenBackground),
+            .background(BackgroundGray),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -128,8 +128,8 @@ fun OnboardingScreen(
             ) {
                 Text(
                     "SkyBuddy",
-                    style = MaterialTheme.typography.displayLarge,
-                    color = Color.White,
+                    style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
+                    color = PrimaryPurple,
                     textAlign = TextAlign.Center
                 )
             }
@@ -142,7 +142,7 @@ fun OnboardingScreen(
                 Text(
                     "Your offline airport companion.\nPowered by an on-device LLM.",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = OnDarkSurfaceDim,
+                    color = OnSurfaceDim,
                     textAlign = TextAlign.Center
                 )
             }
@@ -178,7 +178,7 @@ fun OnboardingScreen(
                                     Text(
                                         "Paste a Hugging Face access token to download the Gemma model (~1.4 GB).",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = OnDarkSurfaceDim
+                                        color = OnSurfaceDim
                                     )
                                     OutlinedTextField(
                                         value = state.token,
@@ -188,10 +188,12 @@ fun OnboardingScreen(
                                         modifier = Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(14.dp),
                                         colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = SkyBlue,
-                                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                                            focusedLabelColor = SkyBlue,
-                                            cursorColor = SkyBlue
+                                            focusedBorderColor = PrimaryPurple,
+                                            unfocusedBorderColor = Color(0xFFE5E7EB),
+                                            focusedLabelColor = PrimaryPurple,
+                                            cursorColor = PrimaryPurple,
+                                            focusedContainerColor = Color.White,
+                                            unfocusedContainerColor = Color(0xFFF9FAFB)
                                         )
                                     )
                                     if (phase.showError) {
@@ -224,26 +226,26 @@ fun OnboardingScreen(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(8.dp),
-                                            color = SkyBlue,
-                                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            color = PrimaryPurple,
+                                            trackColor = PrimaryPurple.copy(alpha = 0.1f),
                                         )
                                         Text(
                                             "${(progress * 100).toInt()}%  (${phase.bytesRead / 1_000_000} / ${phase.total / 1_000_000} MB)",
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = OnDarkSurfaceDim
+                                            color = OnSurfaceDim
                                         )
                                     } else {
                                         LinearProgressIndicator(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(8.dp),
-                                            color = SkyBlue,
-                                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            color = PrimaryPurple,
+                                            trackColor = PrimaryPurple.copy(alpha = 0.1f),
                                         )
                                         Text(
-                                            "Downloading…",
+                                            "Downloading...",
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = OnDarkSurfaceDim
+                                            color = OnSurfaceDim
                                         )
                                     }
                                 }
@@ -265,10 +267,10 @@ fun OnboardingScreen(
                                     Text(
                                         phase.message,
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = OnDarkSurfaceDim
+                                        color = OnSurfaceDim
                                     )
                                     TextButton(onClick = viewModel::retry) {
-                                        Text("Try Again", color = SkyBlue)
+                                        Text("Try Again", color = PrimaryPurple)
                                     }
                                 }
                             }
@@ -276,9 +278,9 @@ fun OnboardingScreen(
 
                         OnboardingPhase.Done -> {
                             Text(
-                                "Model ready ✓",
+                                "Model ready",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary
+                                color = PrimaryPurple
                             )
                         }
                     }
@@ -308,7 +310,7 @@ private fun AnimatedAirplaneIcon(modifier: Modifier = Modifier) {
         // Glow circle behind plane
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(SkyBlue.copy(alpha = 0.25f), Color.Transparent),
+                colors = listOf(PrimaryPurple.copy(alpha = 0.15f), Color.Transparent),
                 center = Offset(cx, cy),
                 radius = size.width * 0.45f
             ),
@@ -339,15 +341,11 @@ private fun AnimatedAirplaneIcon(modifier: Modifier = Modifier) {
             }
             drawPath(
                 path = planePath,
-                brush = Brush.verticalGradient(
-                    listOf(SkyBlue, SkyIndigo),
-                    startY = cy - 28f,
-                    endY = cy + 28f
-                )
+                color = PrimaryPurple
             )
             drawPath(
                 path = planePath,
-                color = Color.White.copy(alpha = 0.15f),
+                color = PrimaryLight.copy(alpha = 0.3f),
                 style = Stroke(width = 1.5f, cap = StrokeCap.Round)
             )
         }

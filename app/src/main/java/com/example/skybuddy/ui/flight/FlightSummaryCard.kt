@@ -20,20 +20,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.skybuddy.data.db.FlightEntity
 import com.example.skybuddy.ui.theme.AirlineColors
 import com.example.skybuddy.ui.theme.GlassCard
-import com.example.skybuddy.ui.theme.GradientStart
-import com.example.skybuddy.ui.theme.GradientEnd
-import com.example.skybuddy.ui.theme.OnDarkSurfaceDim
+import com.example.skybuddy.ui.theme.OnSurfaceDark
+import com.example.skybuddy.ui.theme.OnSurfaceDim
+import com.example.skybuddy.ui.theme.PrimaryLight
+import com.example.skybuddy.ui.theme.PrimaryPurple
 
 @Composable
 fun FlightSummaryCard(
     flight: FlightEntity,
     modifier: Modifier = Modifier
 ) {
-    val accent = AirlineColors[flight.airline] ?: MaterialTheme.colorScheme.primary
+    val accent = AirlineColors[flight.airline] ?: PrimaryPurple
 
     GlassCard(modifier = modifier.fillMaxWidth()) {
         Row(modifier = Modifier.height(IntrinsicSize.Min)) {
@@ -42,9 +44,9 @@ fun FlightSummaryCard(
                 modifier = Modifier
                     .width(4.dp)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp))
+                    .clip(RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
                     .background(
-                        Brush.verticalGradient(listOf(GradientStart, GradientEnd))
+                        Brush.verticalGradient(listOf(PrimaryPurple, PrimaryLight))
                     )
             )
 
@@ -59,13 +61,13 @@ fun FlightSummaryCard(
                 ) {
                     Text(
                         flight.flightNumber,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = accent
                     )
                     Text(
                         flight.status,
                         style = MaterialTheme.typography.labelSmall,
-                        color = OnDarkSurfaceDim
+                        color = OnSurfaceDim
                     )
                 }
                 Row(
@@ -75,8 +77,8 @@ fun FlightSummaryCard(
                 ) {
                     Text(
                         flight.origin,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = OnSurfaceDark
                     )
                     AnimatedFlightPath(
                         color = accent,
@@ -86,17 +88,17 @@ fun FlightSummaryCard(
                     )
                     Text(
                         flight.destination,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = OnSurfaceDark
                     )
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Gate ${flight.gate}", style = MaterialTheme.typography.bodySmall, color = OnDarkSurfaceDim)
-                    Text("Term ${flight.terminal}", style = MaterialTheme.typography.bodySmall, color = OnDarkSurfaceDim)
-                    Text(formatFlightTime(flight.time), style = MaterialTheme.typography.bodySmall, color = OnDarkSurfaceDim)
+                    Text("Gate ${flight.gate}", style = MaterialTheme.typography.bodySmall, color = OnSurfaceDim)
+                    Text("Term ${flight.terminal}", style = MaterialTheme.typography.bodySmall, color = OnSurfaceDim)
+                    Text(formatFlightTime(flight.time), style = MaterialTheme.typography.bodySmall, color = OnSurfaceDim)
                 }
             }
         }

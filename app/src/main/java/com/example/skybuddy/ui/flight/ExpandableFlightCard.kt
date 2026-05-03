@@ -38,11 +38,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.skybuddy.data.db.FlightEntity
 import com.example.skybuddy.ui.theme.AirlineColors
 import com.example.skybuddy.ui.theme.GlassCard
-import com.example.skybuddy.ui.theme.OnDarkSurfaceDim
+import com.example.skybuddy.ui.theme.OnSurfaceDark
+import com.example.skybuddy.ui.theme.OnSurfaceDim
+import com.example.skybuddy.ui.theme.PrimaryPurple
 import com.example.skybuddy.ui.theme.StatusDelayed
 import com.example.skybuddy.ui.theme.StatusOnTime
 
@@ -53,7 +56,7 @@ fun ExpandableFlightCard(
     onClick: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val accent = AirlineColors[flight.airline] ?: MaterialTheme.colorScheme.primary
+    val accent = AirlineColors[flight.airline] ?: PrimaryPurple
     val isDelayed = flight.status.equals("Delayed", true) || flight.status.equals("Cancelled", true)
     val statusColor = if (isDelayed) StatusDelayed else StatusOnTime
     val chevronRotation by animateFloatAsState(
@@ -81,7 +84,7 @@ fun ExpandableFlightCard(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(accent.copy(alpha = 0.15f))
+                            .background(accent.copy(alpha = 0.1f))
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Text(
@@ -93,8 +96,8 @@ fun ExpandableFlightCard(
                     Spacer(Modifier.height(4.dp))
                     Text(
                         flight.flightNumber,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = OnSurfaceDark
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
@@ -102,7 +105,7 @@ fun ExpandableFlightCard(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(statusColor.copy(alpha = 0.15f))
+                            .background(statusColor.copy(alpha = 0.1f))
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
@@ -115,7 +118,7 @@ fun ExpandableFlightCard(
                     Text(
                         formatFlightTime(flight.time),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = OnDarkSurfaceDim
+                        color = OnSurfaceDim
                     )
                 }
             }
@@ -131,13 +134,13 @@ fun ExpandableFlightCard(
                 Column {
                     Text(
                         flight.origin,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = OnSurfaceDark
                     )
                     Text(
                         flight.originCity,
                         style = MaterialTheme.typography.labelSmall,
-                        color = OnDarkSurfaceDim
+                        color = OnSurfaceDim
                     )
                 }
                 AnimatedFlightPath(
@@ -149,13 +152,13 @@ fun ExpandableFlightCard(
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         flight.destination,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = OnSurfaceDark
                     )
                     Text(
                         flight.destCity,
                         style = MaterialTheme.typography.labelSmall,
-                        color = OnDarkSurfaceDim
+                        color = OnSurfaceDim
                     )
                 }
             }
@@ -175,13 +178,13 @@ fun ExpandableFlightCard(
                 Text(
                     if (expanded) "Hide details" else "Show details",
                     style = MaterialTheme.typography.labelSmall,
-                    color = OnDarkSurfaceDim
+                    color = OnSurfaceDim
                 )
                 Spacer(Modifier.width(4.dp))
                 Icon(
                     Icons.Filled.ExpandMore,
                     contentDescription = null,
-                    tint = OnDarkSurfaceDim,
+                    tint = OnSurfaceDim,
                     modifier = Modifier
                         .size(18.dp)
                         .rotate(chevronRotation)
@@ -219,12 +222,12 @@ private fun DetailRow(icon: ImageVector, label: String, value: String) {
             Icon(
                 icon,
                 contentDescription = null,
-                tint = OnDarkSurfaceDim,
+                tint = OnSurfaceDim,
                 modifier = Modifier.size(16.dp)
             )
             Spacer(Modifier.width(8.dp))
-            Text(label, style = MaterialTheme.typography.bodyMedium, color = OnDarkSurfaceDim)
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = OnSurfaceDim)
         }
-        Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = OnSurfaceDark)
     }
 }

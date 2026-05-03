@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.skybuddy.data.db.FlightEntity
@@ -26,11 +25,10 @@ import com.example.skybuddy.data.db.LuggageEntity
 import com.example.skybuddy.data.db.ReceiptEntity
 import com.example.skybuddy.data.db.TimelineEventEntity
 import com.example.skybuddy.ui.flight.FlightSummaryCard
-import com.example.skybuddy.ui.theme.GlassWhite
-import com.example.skybuddy.ui.theme.GlassBorder
-import com.example.skybuddy.ui.theme.LocalSkyBuddyGradients
-import com.example.skybuddy.ui.theme.OnDarkSurfaceDim
-import com.example.skybuddy.ui.theme.SkyTeal
+import com.example.skybuddy.ui.theme.OnSurfaceDark
+import com.example.skybuddy.ui.theme.OnSurfaceDim
+import com.example.skybuddy.ui.theme.PrimaryPurple
+import com.example.skybuddy.ui.theme.StatusOnTime
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
@@ -77,7 +75,6 @@ fun ConversationFlowItem(event: TimelineEventEntity) {
 @Composable
 private fun MessageBubble(event: TimelineEventEntity) {
     val isUser = event.role == "USER"
-    val gradients = LocalSkyBuddyGradients.current
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -95,8 +92,8 @@ private fun MessageBubble(event: TimelineEventEntity) {
                     )
                 )
                 .then(
-                    if (isUser) Modifier.background(gradients.userBubble)
-                    else Modifier.background(GlassWhite)
+                    if (isUser) Modifier.background(PrimaryPurple)
+                    else Modifier.background(Color.White)
                 )
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             contentAlignment = Alignment.CenterStart
@@ -104,8 +101,7 @@ private fun MessageBubble(event: TimelineEventEntity) {
             Text(
                 event.content,
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (isUser) Color.White
-                else MaterialTheme.colorScheme.onSurface
+                color = if (isUser) Color.White else OnSurfaceDark
             )
         }
     }
@@ -125,19 +121,19 @@ fun MapToastCard(tip: String) {
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
-                    .background(GlassWhite)
+                    .background(Color.White)
             ) {
                 // Accent left strip
                 Box(
                     modifier = Modifier
                         .width(4.dp)
                         .fillMaxHeight()
-                        .background(SkyTeal)
+                        .background(StatusOnTime)
                 )
                 Text(
-                    "📍 Tip: $tip",
+                    "Tip: $tip",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = OnSurfaceDark,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
                 )
             }

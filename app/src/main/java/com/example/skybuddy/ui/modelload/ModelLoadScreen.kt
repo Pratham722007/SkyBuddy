@@ -15,12 +15,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -38,6 +44,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,12 +53,13 @@ import com.example.skybuddy.ai.InitStage
 import com.example.skybuddy.ui.diagnostics.DiagnosticsDialog
 import com.example.skybuddy.ui.diagnostics.DiagnosticsState
 import com.example.skybuddy.ui.diagnostics.ComponentStatus
+import com.example.skybuddy.ui.theme.BackgroundGray
 import com.example.skybuddy.ui.theme.GlassCard
 import com.example.skybuddy.ui.theme.GradientButton
-import com.example.skybuddy.ui.theme.LocalSkyBuddyGradients
-import com.example.skybuddy.ui.theme.OnDarkSurfaceDim
-import com.example.skybuddy.ui.theme.SkyBlue
-import com.example.skybuddy.ui.theme.SkyIndigo
+import com.example.skybuddy.ui.theme.OnSurfaceDark
+import com.example.skybuddy.ui.theme.OnSurfaceDim
+import com.example.skybuddy.ui.theme.PrimaryLight
+import com.example.skybuddy.ui.theme.PrimaryPurple
 
 @Composable
 fun ModelLoadScreen(
@@ -60,7 +68,6 @@ fun ModelLoadScreen(
 ) {
     val state by viewModel.state.collectAsState()
     var showDiagnostics by remember { mutableStateOf(false) }
-    val gradients = LocalSkyBuddyGradients.current
 
     LaunchedEffect(Unit) { viewModel.startIfNeeded() }
     LaunchedEffect(state) {
@@ -70,7 +77,7 @@ fun ModelLoadScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(gradients.screenBackground),
+            .background(BackgroundGray),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -89,8 +96,8 @@ fun ModelLoadScreen(
 
                     Text(
                         "Loading Model",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Color.White,
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = OnSurfaceDark,
                         textAlign = TextAlign.Center
                     )
 
@@ -102,7 +109,7 @@ fun ModelLoadScreen(
                         Text(
                             stageLabel(stage),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = OnDarkSurfaceDim,
+                            color = OnSurfaceDim,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -112,14 +119,9 @@ fun ModelLoadScreen(
 
                 is ModelLoadUi.Ready -> {
                     Text(
-                        "✓",
-                        style = MaterialTheme.typography.displayLarge,
-                        color = SkyBlue
-                    )
-                    Text(
                         "Model Ready",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Color.White,
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = PrimaryPurple,
                         textAlign = TextAlign.Center
                     )
                     BackendChip(s.backend)
@@ -141,7 +143,7 @@ fun ModelLoadScreen(
                             Text(
                                 s.message,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = OnDarkSurfaceDim,
+                                color = OnSurfaceDim,
                                 textAlign = TextAlign.Center
                             )
                             BackendChip(s.backend)
@@ -155,7 +157,7 @@ fun ModelLoadScreen(
             }
 
             TextButton(onClick = { showDiagnostics = true }) {
-                Text("View Diagnostics", color = OnDarkSurfaceDim)
+                Text("View Diagnostics", color = OnSurfaceDim)
             }
         }
     }
@@ -202,7 +204,7 @@ private fun PulsingRings(modifier: Modifier = Modifier) {
 
         // Pulsing outer ring
         drawCircle(
-            color = SkyBlue.copy(alpha = 0.15f * (1f - pulse)),
+            color = PrimaryPurple.copy(alpha = 0.12f * (1f - pulse)),
             radius = maxR * (0.6f + 0.4f * pulse),
             center = Offset(cx, cy),
             style = Stroke(width = 3f)
@@ -211,7 +213,7 @@ private fun PulsingRings(modifier: Modifier = Modifier) {
         // Rotating arc
         drawArc(
             brush = Brush.sweepGradient(
-                colors = listOf(SkyBlue, SkyIndigo, Color.Transparent),
+                colors = listOf(PrimaryPurple, PrimaryLight, Color.Transparent),
                 center = Offset(cx, cy)
             ),
             startAngle = rotation,
@@ -225,7 +227,7 @@ private fun PulsingRings(modifier: Modifier = Modifier) {
         // Inner glow dot
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(SkyBlue.copy(alpha = 0.6f), Color.Transparent),
+                colors = listOf(PrimaryPurple.copy(alpha = 0.4f), Color.Transparent),
                 center = Offset(cx, cy),
                 radius = maxR * 0.25f
             ),
@@ -238,23 +240,34 @@ private fun PulsingRings(modifier: Modifier = Modifier) {
 @Composable
 private fun BackendChip(backend: Backend) {
     GlassCard(cornerRadius = 12.dp) {
-        Text(
-            text = backendLabel(backend),
-            style = MaterialTheme.typography.labelSmall,
-            color = OnDarkSurfaceDim,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                if (backend == Backend.GPU) Icons.Filled.Bolt else Icons.Filled.Memory,
+                contentDescription = null,
+                tint = PrimaryPurple,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text = backendLabel(backend),
+                style = MaterialTheme.typography.labelSmall,
+                color = OnSurfaceDim
+            )
+        }
     }
 }
 
 private fun stageLabel(stage: InitStage): String = when (stage) {
-    InitStage.ProbingDevice -> "Probing device…"
-    InitStage.OpeningModel -> "Opening model…"
-    InitStage.AllocatingTensors -> "Allocating tensors…"
-    InitStage.Warmup -> "Warming up…"
+    InitStage.ProbingDevice -> "Probing device..."
+    InitStage.OpeningModel -> "Opening model..."
+    InitStage.AllocatingTensors -> "Allocating tensors..."
+    InitStage.Warmup -> "Warming up..."
 }
 
 private fun backendLabel(backend: Backend): String = when (backend) {
-    Backend.GPU -> "⚡ Using GPU"
-    Backend.CPU -> "🖥️ Using CPU"
+    Backend.GPU -> "Using GPU"
+    Backend.CPU -> "Using CPU"
 }

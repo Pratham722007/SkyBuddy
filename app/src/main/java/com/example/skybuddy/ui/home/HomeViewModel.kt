@@ -21,10 +21,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+enum class FlightTab { ARRIVAL, DEPARTURE }
+
 data class HomeUiState(
     val input: String = "",
     val isAdding: Boolean = false,
-    val message: String? = null
+    val message: String? = null,
+    val selectedTab: FlightTab = FlightTab.DEPARTURE
 )
 
 @HiltViewModel
@@ -44,6 +47,8 @@ class HomeViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun onInputChanged(value: String) = _ui.update { it.copy(input = value) }
+
+    fun onTabSelected(tab: FlightTab) = _ui.update { it.copy(selectedTab = tab) }
 
     suspend fun ingestFlight(context: Context, uri: Uri): Result<FlightEntity> {
         _ui.update { it.copy(isAdding = true, message = "Ingesting boarding pass...") }
@@ -80,8 +85,8 @@ class HomeViewModel @Inject constructor(
             val message = when (result) {
                 is AppResult.Success -> "Tracking ${result.value.flightNumber}"
                 is AppResult.Error -> when (val r = result.reason) {
-                    ErrorReason.MissingApiKey -> "AirLabs key not configured — running offline"
-                    ErrorReason.Offline -> "Offline — using cached data if available"
+                    ErrorReason.MissingApiKey -> "AirLabs key not configured -- running offline"
+                    ErrorReason.Offline -> "Offline -- using cached data if available"
                     ErrorReason.NotFound -> "Flight not found"
                     is ErrorReason.Network -> "Network error: ${r.message}"
                     is ErrorReason.Unexpected -> "Unexpected: ${r.message}"

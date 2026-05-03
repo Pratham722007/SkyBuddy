@@ -6,12 +6,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DoorBack
+import androidx.compose.material.icons.filled.FlightTakeoff
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Luggage
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -25,18 +33,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.example.skybuddy.ui.theme.GlassWhite
-import com.example.skybuddy.ui.theme.GlassBorder
-import com.example.skybuddy.ui.theme.OnDarkSurfaceDim
-import com.example.skybuddy.ui.theme.SkyBlue
+import com.example.skybuddy.ui.theme.OnSurfaceDark
+import com.example.skybuddy.ui.theme.OnSurfaceDim
+import com.example.skybuddy.ui.theme.PrimaryPurple
 
-private fun phaseIcon(phase: JourneyPhase): String = when (phase) {
-    JourneyPhase.HOME -> "🏠"
-    JourneyPhase.AIRPORT_ENTRANCE -> "🚪"
-    JourneyPhase.BAGGAGE_DROP -> "🛄"
-    JourneyPhase.SECURITY_CHECKPOINT -> "🔒"
-    JourneyPhase.GATE -> "🛫"
+private fun phaseIcon(phase: JourneyPhase): ImageVector = when (phase) {
+    JourneyPhase.HOME -> Icons.Filled.Home
+    JourneyPhase.AIRPORT_ENTRANCE -> Icons.Filled.DoorBack
+    JourneyPhase.BAGGAGE_DROP -> Icons.Filled.Luggage
+    JourneyPhase.SECURITY_CHECKPOINT -> Icons.Filled.Lock
+    JourneyPhase.GATE -> Icons.Filled.FlightTakeoff
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,12 +66,20 @@ fun GlobalStateDropdown(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(14.dp))
-                .background(GlassWhite)
+                .background(Color.White)
         ) {
             TextField(
-                value = "${phaseIcon(currentPhase)}  ${currentPhase.displayName}",
+                value = currentPhase.displayName,
                 onValueChange = {},
                 readOnly = true,
+                leadingIcon = {
+                    Icon(
+                        phaseIcon(currentPhase),
+                        contentDescription = null,
+                        tint = PrimaryPurple,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                 },
@@ -72,8 +88,8 @@ fun GlobalStateDropdown(
                     unfocusedContainerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = OnDarkSurfaceDim
+                    focusedTextColor = OnSurfaceDark,
+                    unfocusedTextColor = OnSurfaceDim
                 ),
                 textStyle = MaterialTheme.typography.labelLarge,
                 modifier = Modifier
@@ -90,13 +106,18 @@ fun GlobalStateDropdown(
                 DropdownMenuItem(
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(phaseIcon(phase), style = MaterialTheme.typography.bodyLarge)
+                            Icon(
+                                phaseIcon(phase),
+                                contentDescription = null,
+                                tint = if (phase == currentPhase) PrimaryPurple else OnSurfaceDim,
+                                modifier = Modifier.size(20.dp)
+                            )
                             Spacer(Modifier.width(10.dp))
                             Text(
                                 phase.displayName,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = if (phase == currentPhase) SkyBlue
-                                else MaterialTheme.colorScheme.onSurface
+                                color = if (phase == currentPhase) PrimaryPurple
+                                else OnSurfaceDark
                             )
                         }
                     },
