@@ -2,12 +2,14 @@ package com.example.skybuddy.ui.map
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.skybuddy.data.repository.LayoutNode
-import com.example.skybuddy.data.repository.MapLayout
-import com.example.skybuddy.data.repository.MapRepository
-import com.example.skybuddy.domain.pathfinding.AStarPathfinder
+import com.example.skybuddy.shared.data.repository.LayoutNode
+import com.example.skybuddy.shared.data.repository.MapLayout
+import com.example.skybuddy.shared.data.repository.MapRepository
+import com.example.skybuddy.shared.domain.pathfinding.AStarPathfinder
+import com.example.skybuddy.shared.location.BlockedRegionManager
+import com.example.skybuddy.shared.location.IndoorLocationManager
 import com.example.skybuddy.domain.state.JourneyManager
-import com.example.skybuddy.location.IndoorLocationManager
+import com.example.skybuddy.location.SOSBeaconEmitter
 import com.example.skybuddy.ui.journey.JourneyPhase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -28,14 +30,18 @@ data class MapUiState(
     val navigationStep: String = "",
     val currentX: Float = 500f,
     val currentY: Float = 900f,
-    val currentHeading: Float = 0f
+    val currentHeading: Float = 0f,
+    val blockedNodeIds: Set<String> = emptySet(),
+    val sosSent: Boolean = false
 )
 
 @HiltViewModel
 class IndoorMapViewModel @Inject constructor(
     private val mapRepository: MapRepository,
     private val journeyManager: JourneyManager,
-    private val indoorLocationManager: IndoorLocationManager
+    private val indoorLocationManager: IndoorLocationManager,
+    private val blockedRegionManager: BlockedRegionManager,
+    private val sosBeaconEmitter: SOSBeaconEmitter
 ) : ViewModel() {
 
     private val pathfinder = AStarPathfinder()
@@ -49,9 +55,15 @@ class IndoorMapViewModel @Inject constructor(
         _internalState,
         indoorLocationManager.currentX,
         indoorLocationManager.currentY,
-        indoorLocationManager.currentHeading
-    ) { state, x, y, heading ->
-        state.copy(currentX = x, currentY = y, currentHeading = heading)
+        indoorLocationManager.currentHeading,
+        blockedRegionManager.blockedNodeIds
+    ) { state, x, y, heading, blocked ->
+        state.copy(
+            currentX = x,
+            currentY = y,
+            currentHeading = heading,
+            blockedNodeIds = blocked
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -63,6 +75,12 @@ class IndoorMapViewModel @Inject constructor(
         viewModelScope.launch {
             journeyManager.currentPhase.collectLatest { phase ->
                 updatePathForPhase(phase)
+            }
+        }
+        // Re-route when blocked regions change
+        viewModelScope.launch {
+            blockedRegionManager.blockedNodeIds.collectLatest {
+                recalculatePath()
             }
         }
     }
@@ -154,9 +172,10 @@ class IndoorMapViewModel @Inject constructor(
 
         val startX = indoorLocationManager.currentX.value
         val startY = indoorLocationManager.currentY.value
+        val blocked = blockedRegionManager.blockedNodeIds.value
 
         viewModelScope.launch(Dispatchers.Default) {
-            val path = pathfinder.findPath(layout, currentFloor, startX, startY, goalId)
+            val path = pathfinder.findPath(layout, currentFloor, startX, startY, goalId, blocked)
             _internalState.update { it.copy(currentPath = path) }
         }
     }
@@ -169,5 +188,16 @@ class IndoorMapViewModel @Inject constructor(
     fun simulateStep() {
         indoorLocationManager.onStepDetected()
         recalculatePath()
+    }
+
+    fun sendSOS(typeId: String) {
+        val x = indoorLocationManager.currentX.value
+        val y = indoorLocationManager.currentY.value
+        sosBeaconEmitter.emitSOS(typeId, x, y)
+        _internalState.update { it.copy(sosSent = true) }
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(3000)
+            _internalState.update { it.copy(sosSent = false) }
+        }
     }
 }

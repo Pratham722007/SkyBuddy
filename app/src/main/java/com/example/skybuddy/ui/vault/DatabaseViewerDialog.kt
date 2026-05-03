@@ -65,7 +65,7 @@ fun DatabaseViewerDialog(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 item { SectionHeader("Flights", state.flights.size, SkyBlue) }
-                items(state.flights, key = { it.flightNumber }) { f ->
+                items(state.flights, key = { "flight_${it.flightNumber}" }) { f ->
                     Text(
                         "${f.flightNumber}  ${f.origin}→${f.destination}  ${f.status}",
                         style = MaterialTheme.typography.bodyMedium,
@@ -88,7 +88,7 @@ fun DatabaseViewerDialog(
                         }
                     }
                 }
-                items(state.luggage, key = { it.id }) { l ->
+                items(state.luggage, key = { "luggage_${it.id}" }) { l ->
                     Text(
                         l.description,
                         style = MaterialTheme.typography.bodyMedium,
@@ -111,7 +111,7 @@ fun DatabaseViewerDialog(
                         }
                     }
                 }
-                items(state.receipts, key = { it.id }) { r ->
+                items(state.receipts, key = { "receipt_${it.id}" }) { r ->
                     Text(
                         "${r.vendor}  ${r.amount} ${r.currency}",
                         style = MaterialTheme.typography.bodyMedium,

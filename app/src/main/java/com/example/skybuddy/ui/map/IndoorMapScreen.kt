@@ -1,5 +1,7 @@
 package com.example.skybuddy.ui.map
 
+import com.example.skybuddy.shared.data.repository.LayoutNode as SharedLayoutNode
+
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -84,6 +86,7 @@ fun IndoorMapScreen(
     var offset by remember { mutableStateOf(Offset.Zero) }
     var showCalibration by remember { mutableStateOf(false) }
     var isVisualCalibrationMode by remember { mutableStateOf(false) }
+    var showSOSSheet by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     // Pulsing animation for blue dot
@@ -308,6 +311,45 @@ fun IndoorMapScreen(
                 )
 
                 // Blue dot — pulsing
+                // ─── Blocked region overlays (hatched red zones) ───
+                val blockedNodes = uiState.blockedNodeIds
+                if (blockedNodes.isNotEmpty()) {
+                    floor?.nodes?.filter { it.id in blockedNodes }?.forEach { node ->
+                        val bc = Offset(node.x, node.y)
+                        val blockR = 45f
+                        drawCircle(
+                            color = ErrorRed.copy(alpha = 0.18f),
+                            radius = blockR + 8f,
+                            center = bc
+                        )
+                        drawCircle(
+                            color = ErrorRed.copy(alpha = 0.35f),
+                            radius = blockR,
+                            center = bc,
+                            style = Stroke(
+                                width = 3f,
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
+                            )
+                        )
+                        // Diagonal cross lines
+                        drawLine(
+                            color = ErrorRed.copy(alpha = 0.3f),
+                            start = Offset(bc.x - blockR * 0.6f, bc.y - blockR * 0.6f),
+                            end = Offset(bc.x + blockR * 0.6f, bc.y + blockR * 0.6f),
+                            strokeWidth = 2f
+                        )
+                        drawLine(
+                            color = ErrorRed.copy(alpha = 0.3f),
+                            start = Offset(bc.x + blockR * 0.6f, bc.y - blockR * 0.6f),
+                            end = Offset(bc.x - blockR * 0.6f, bc.y + blockR * 0.6f),
+                            strokeWidth = 2f
+                        )
+                    }
+                }
+
+                // User location — pulsing ring + navigation arrow (heading in radians)
+                val cx = uiState.currentX
+                val cy = uiState.currentY
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(SkyBlue.copy(alpha = pulseAlpha), Color.Transparent),
@@ -392,6 +434,45 @@ fun IndoorMapScreen(
                     }
                 }
 
+                // ─── SOS FAB (bottom-start) ───
+                FloatingActionButton(
+                    onClick = { showSOSSheet = true },
+                    shape = CircleShape,
+                    containerColor = ErrorRed,
+                    contentColor = SurfaceWhite,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(16.dp)
+                        .size(60.dp)
+                ) {
+                    Text(
+                        "SOS",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = SurfaceWhite
+                    )
+                }
+
+                // ─── SOS sent confirmation ───
+                if (uiState.sosSent) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 90.dp)
+                            .background(
+                                color = ErrorRed,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .padding(horizontal = 20.dp, vertical = 10.dp)
+                    ) {
+                        Text(
+                            "SOS Alert Sent!",
+                            color = SurfaceWhite,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
@@ -447,6 +528,16 @@ fun IndoorMapScreen(
                 isVisualCalibrationMode = true
             },
             onDismiss = { showCalibration = false }
+        )
+    }
+
+    if (showSOSSheet) {
+        SOSBottomSheet(
+            onSOSSelected = { sosType ->
+                viewModel.sendSOS(sosType.id)
+                showSOSSheet = false
+            },
+            onDismiss = { showSOSSheet = false }
         )
     }
 }

@@ -8,6 +8,8 @@ import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.util.Log
 import com.example.skybuddy.domain.usecase.EvaluateAmbientBeaconUseCase
+import com.example.skybuddy.shared.location.BlockedRegionManager
+import com.example.skybuddy.shared.location.IndoorLocationManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +21,8 @@ import javax.inject.Singleton
 class DynamicBeaconReceiver @Inject constructor(
     @ApplicationContext private val context: Context,
     private val evaluateAmbientBeacon: EvaluateAmbientBeaconUseCase,
-    private val indoorLocationManager: IndoorLocationManager
+    private val indoorLocationManager: IndoorLocationManager,
+    private val blockedRegionManager: BlockedRegionManager
 ) {
     private var isScanning = false
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
@@ -31,8 +34,30 @@ class DynamicBeaconReceiver @Inject constructor(
             result?.scanRecord?.let { scanRecord ->
                 // Use the advertised device name from the scan record only.
                 // BluetoothDevice.getName() requires BLUETOOTH_CONNECT, which we do not hold.
-                val deviceName = scanRecord.deviceName
-                if (deviceName != null && deviceName.startsWith("SB:")) {
+                val deviceName = scanRecord.deviceName ?: return
+
+                // ─── Handle blocked-region beacons from security ───
+                if (deviceName.startsWith("SBBLK:")) {
+                    val nodesCsv = deviceName.removePrefix("SBBLK:")
+                    val nodeIds = nodesCsv.split(",")
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                        .toSet()
+                    if (nodeIds.isNotEmpty()) {
+                        Log.d("DynamicBeaconReceiver", "Blocked regions received: $nodeIds")
+                        blockedRegionManager.addBlockedNodes(nodeIds)
+                    }
+                    return
+                }
+
+                // ─── Handle SOS beacons (just log, main app doesn't act on its own SOS) ───
+                if (deviceName.startsWith("SBSOS:")) {
+                    Log.d("DynamicBeaconReceiver", "SOS beacon seen: $deviceName")
+                    return
+                }
+
+                // ─── Handle shop/offer beacons (existing logic) ───
+                if (deviceName.startsWith("SB:")) {
                     val payload = deviceName.removePrefix("SB:")
                     val parts = payload.split("|")
                     if (parts.size >= 2) {

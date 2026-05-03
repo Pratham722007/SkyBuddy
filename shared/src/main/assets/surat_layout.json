@@ -1,0 +1,81 @@
+{
+  "airport": "BLR",
+  "terminal": "Terminal 2",
+  "floors": [
+    {
+      "level": 1,
+      "name": "Level 1 - Departures & Retail",
+      "paths": [
+        {
+          "type": "boundary",
+          "description": "Outer boundary of T2 including Check-in, C and D piers",
+          "d": "M 50 250 L 350 250 L 350 100 L 1450 100 L 1450 950 L 1350 950 L 1350 750 L 1050 750 L 1050 880 L 750 880 L 750 750 L 50 750 Z"
+        },
+        {
+          "type": "wall",
+          "description": "Baggage Drop Wall (Leaves <space> at the top)",
+          "d": "M 340 350 L 360 350 L 360 750 L 340 750 Z"
+        },
+        {
+          "type": "wall",
+          "description": "Security Check Wall - Pink Zone (Leaves <space> at the bottom)",
+          "d": "M 540 250 L 560 250 L 560 650 L 540 650 Z"
+        },
+        {
+          "type": "island",
+          "description": "Curved Retail Island (Duty Free & Sweets)",
+          "d": "M 650 350 Q 750 250 850 350 T 650 350 Z"
+        },
+        {
+          "type": "island",
+          "description": "Curved Retail Island (Central Restaurants)",
+          "d": "M 800 500 C 900 450, 1000 450, 1100 500 C 1000 650, 900 650, 800 500 Z"
+        }
+      ],
+      "nodes": [
+        { "id": "ENTRANCE", "type": "DOOR", "x": 100, "y": 500 },
+        { "id": "080_ARRIVAL_LOUNGE", "type": "LOUNGE", "x": 200, "y": 300 },
+        { "id": "COFFEE_BEAN", "type": "RESTAURANT", "x": 200, "y": 400 },
+        { "id": "PIZZA_HUT", "type": "RESTAURANT", "x": 150, "y": 550 },
+        { "id": "SUBWAY", "type": "RESTAURANT", "x": 200, "y": 650 },
+        
+        { "id": "BAGGAGE_DROP", "type": "BAGGAGE", "x": 280, "y": 500 },
+        
+        { "id": "SECURITY_CHECK", "type": "CHECKPOINT", "x": 450, "y": 500 },
+        
+        { "id": "ZIMSON", "type": "SHOP", "x": 590, "y": 360 },
+        { "id": "STARBUCKS", "type": "RESTAURANT", "x": 590, "y": 560 },
+        { "id": "DUTY_FREE", "type": "SHOP", "x": 670, "y": 270 },
+        { "id": "MICHAEL_KORS", "type": "SHOP", "x": 670, "y": 650 },
+        { "id": "RELAY", "type": "SHOP", "x": 770, "y": 360 },
+        { "id": "BOSS", "type": "SHOP", "x": 770, "y": 560 },
+        
+        { "id": "ANAND_SWEETS", "type": "SHOP", "x": 880, "y": 270 },
+        { "id": "JAMIE_OLIVER", "type": "RESTAURANT", "x": 880, "y": 470 },
+        { "id": "WOLFGANG_PUCK", "type": "RESTAURANT", "x": 880, "y": 650 },
+        
+        { "id": "THE_IRISH_HOUSE", "type": "RESTAURANT", "x": 1000, "y": 360 },
+        { "id": "ARMANI_EXCHANGE", "type": "SHOP", "x": 1000, "y": 650 },
+        
+        { "id": "BOMBAY_BRASSERIE", "type": "RESTAURANT", "x": 1050, "y": 470 },
+        { "id": "SWAROVSKI", "type": "SHOP", "x": 1100, "y": 650 },
+        { "id": "SS_BEAUTY", "type": "SHOP", "x": 1180, "y": 650 },
+        
+        { "id": "FRESH_HEALTHY", "type": "RESTAURANT", "x": 1220, "y": 450 },
+        { "id": "LA_MADELEINE", "type": "RESTAURANT", "x": 1220, "y": 560 },
+        
+        { "id": "T2_080_DOMESTIC_LOUNGE", "type": "LOUNGE", "x": 900, "y": 800 },
+        
+        { "id": "GATE_C1", "type": "GATE", "x": 450, "y": 150 },
+        { "id": "GATE_C2", "type": "GATE", "x": 650, "y": 150 },
+        { "id": "GATE_C3", "type": "GATE", "x": 900, "y": 150 },
+        { "id": "GATE_C6", "type": "GATE", "x": 1200, "y": 150 },
+        
+        { "id": "GATE_D1", "type": "GATE", "x": 1400, "y": 150 },
+        { "id": "GATE_D2", "type": "GATE", "x": 1400, "y": 300 },
+        { "id": "GATE_D9", "type": "GATE", "x": 1400, "y": 600 },
+        { "id": "GATE_D11", "type": "GATE", "x": 1400, "y": 800 }
+      ]
+    }
+  ]
+}

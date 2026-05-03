@@ -232,7 +232,7 @@ fun ChatScreen(
                     }
                 }
             }
-            items(timelineEvents, key = { it.id }) { ConversationFlowItem(it) }
+            items(timelineEvents, key = { "msg_${it.id}" }) { ConversationFlowItem(it) }
             if (state.isThinking) {
                 item {
                     ThinkingIndicator()
