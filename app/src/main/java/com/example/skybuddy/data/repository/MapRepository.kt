@@ -18,7 +18,8 @@ data class MapLayout(
 @JsonClass(generateAdapter = true)
 data class LayoutPath(
     val type: String,
-    val d: String
+    val d: String,
+    val description: String? = null
 )
 
 @JsonClass(generateAdapter = true)
