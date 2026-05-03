@@ -15,11 +15,7 @@ import javax.inject.Singleton
 class MlKitBarcodeScanner @Inject constructor() {
 
     private val options = BarcodeScannerOptions.Builder()
-        .setBarcodeFormats(
-            Barcode.FORMAT_PDF417,
-            Barcode.FORMAT_AZTEC,
-            Barcode.FORMAT_QR_CODE
-        )
+        .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
         .build()
 
     private val scanner = BarcodeScanning.getClient(options)

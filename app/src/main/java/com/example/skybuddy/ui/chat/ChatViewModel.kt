@@ -71,6 +71,23 @@ class ChatViewModel @Inject constructor(
     fun onInputChanged(value: String) = _state.update { it.copy(input = value) }
 
     fun toggleIntercom() = _state.update { it.copy(isIntercomMode = !it.isIntercomMode) }
+
+    fun sendWelcome(flightNumber: String?) {
+        viewModelScope.launch {
+            val flight = flightNumber?.let { flightRepository.getFlight(it) }
+            val greeting = if (flight != null) {
+                "Hi! I'm SkyBuddy, your travel assistant. I'm tracking flight ${flight.flightNumber} (${flight.airline}) from ${flight.origin} to ${flight.destination}. Ask me about your gate, terminal, nearby food, or anything else!"
+            } else {
+                "Hi! I'm SkyBuddy, your airport travel assistant. How can I help you today?"
+            }
+            timelineEventDao.insert(TimelineEventEntity(
+                timestamp = System.currentTimeMillis(),
+                role = "GEMMA",
+                uiComponentType = "TEXT",
+                content = greeting
+            ))
+        }
+    }
     
     private fun getSpatialContext(): String {
         val x = indoorLocationManager.currentX.value

@@ -14,10 +14,12 @@ class FlightSyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val syncFlights: SyncFlightsUseCase,
-    private val notifications: NotificationHelper
+    private val notifications: NotificationHelper,
+    private val flightRepository: com.example.skybuddy.data.repository.FlightRepository
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = try {
+        flightRepository.completePastFlights()
         val results = syncFlights()
         results.forEach { (old, new) ->
             if (new == null || new.lastSyncedAt <= old.lastSyncedAt) return@forEach
