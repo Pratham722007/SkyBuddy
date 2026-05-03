@@ -13,6 +13,7 @@ import com.example.skysecurity.location.SOSBeaconScanner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,11 +37,10 @@ class SecurityMapViewModel @Inject constructor(
 ) : ViewModel() {
 
     /** Beacon error/status events — collect in the UI to show Snackbar. */
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val beaconEvents = kotlinx.coroutines.flow.merge(
-        sosScanner.scanEvents,
-        blockedBroadcaster.broadcastEvents
-    )
+    val beaconEvents: Flow<String> = channelFlow {
+        launch { sosScanner.scanEvents.collect { send(it) } }
+        launch { blockedBroadcaster.broadcastEvents.collect { send(it) } }
+    }
 
     private val pathfinder = AStarPathfinder()
     private val _state = MutableStateFlow(SecurityMapState())
@@ -135,7 +135,10 @@ class SecurityMapViewModel @Inject constructor(
     }
 
     fun clearBlockedRegions() {
-        blockedBroadcaster.stopBroadcast()
+        // Broadcast the clear signal (empty set) so the main app removes
+        // all blocked regions. stopBroadcast() would just stop advertising
+        // without notifying the main app.
+        blockedBroadcaster.broadcastBlockedNodes(emptySet())
     }
 
     override fun onCleared() {

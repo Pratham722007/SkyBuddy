@@ -10,6 +10,9 @@ import android.content.Context
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -22,6 +25,10 @@ class SOSBeaconEmitter @Inject constructor(
     private var stopJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
+    // User-facing error/status events
+    private val _sosEvents = MutableSharedFlow<String>(extraBufferCapacity = 8)
+    val sosEvents: SharedFlow<String> = _sosEvents.asSharedFlow()
+
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
             isAdvertising = true
@@ -29,7 +36,9 @@ class SOSBeaconEmitter @Inject constructor(
         }
         override fun onStartFailure(errorCode: Int) {
             isAdvertising = false
-            Log.e("SOSBeaconEmitter", "SOS advertising failed: $errorCode")
+            val msg = "SOS broadcast failed (error $errorCode)"
+            Log.e("SOSBeaconEmitter", msg)
+            _sosEvents.tryEmit(msg)
         }
     }
 
@@ -41,9 +50,20 @@ class SOSBeaconEmitter @Inject constructor(
     @SuppressLint("MissingPermission")
     fun emitSOS(type: String, x: Float? = null, y: Float? = null, durationMs: Long = 30_000) {
         val btManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-        val adapter = btManager?.adapter ?: return
-        if (!adapter.isEnabled) return
-        advertiser = adapter.bluetoothLeAdvertiser ?: return
+        val adapter = btManager?.adapter
+        if (adapter == null || !adapter.isEnabled) {
+            val msg = "Cannot send SOS: Bluetooth is ${if (adapter == null) "not available" else "turned off"}"
+            Log.w("SOSBeaconEmitter", msg)
+            _sosEvents.tryEmit(msg)
+            return
+        }
+        advertiser = adapter.bluetoothLeAdvertiser
+        if (advertiser == null) {
+            val msg = "Cannot send SOS: BLE advertiser unavailable"
+            Log.e("SOSBeaconEmitter", msg)
+            _sosEvents.tryEmit(msg)
+            return
+        }
 
         // Always stop first — isAdvertising is set asynchronously by the
         // callback, so checking it can miss in-progress advertisements.
@@ -62,7 +82,9 @@ class SOSBeaconEmitter @Inject constructor(
         try {
             adapter.name = payload.take(61)
         } catch (e: SecurityException) {
-            Log.e("SOSBeaconEmitter", "Need BLUETOOTH_CONNECT", e)
+            val msg = "SOS broadcast failed: missing Bluetooth permission"
+            Log.e("SOSBeaconEmitter", msg, e)
+            _sosEvents.tryEmit(msg)
             return
         }
 
@@ -83,7 +105,9 @@ class SOSBeaconEmitter @Inject constructor(
         try {
             advertiser?.startAdvertising(settings, advertiseData, scanResponse, advertiseCallback)
         } catch (e: SecurityException) {
-            Log.e("SOSBeaconEmitter", "Need BLUETOOTH_ADVERTISE", e)
+            val msg = "SOS broadcast failed: missing advertise permission"
+            Log.e("SOSBeaconEmitter", msg, e)
+            _sosEvents.tryEmit(msg)
             return
         }
 
@@ -98,12 +122,14 @@ class SOSBeaconEmitter @Inject constructor(
     @SuppressLint("MissingPermission")
     fun stopSOS() {
         stopJob?.cancel()
-        if (!isAdvertising) return
+        // Always try to stop — don't rely on isAdvertising flag (set async)
         try {
             advertiser?.stopAdvertising(advertiseCallback)
             val btManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
             btManager?.adapter?.name = "Android"
-        } catch (_: SecurityException) {}
+        } catch (e: SecurityException) {
+            Log.w("SOSBeaconEmitter", "Failed to stop SOS advertising", e)
+        }
         isAdvertising = false
         Log.d("SOSBeaconEmitter", "SOS advertising stopped")
     }

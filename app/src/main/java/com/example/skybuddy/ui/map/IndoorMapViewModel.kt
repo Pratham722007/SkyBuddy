@@ -52,7 +52,10 @@ class IndoorMapViewModel @Inject constructor(
 ) : ViewModel() {
 
     /** Beacon error/status events — collect in the UI to show Snackbar. */
-    val beaconEvents = dynamicBeaconReceiver.beaconEvents
+    val beaconEvents = kotlinx.coroutines.flow.channelFlow {
+        launch { dynamicBeaconReceiver.beaconEvents.collect { send(it) } }
+        launch { sosBeaconEmitter.sosEvents.collect { send(it) } }
+    }
 
     private val pathfinder = AStarPathfinder()
     private val _internalState = MutableStateFlow(MapUiState())
