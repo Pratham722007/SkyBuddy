@@ -12,7 +12,7 @@ class EvaluateAmbientBeaconUseCase @Inject constructor(
     private val notificationHelper: NotificationHelper
 ) {
     suspend operator fun invoke(beaconPayload: String, locationName: String) {
-        val prompt = "User is walking past a physical beacon at $locationName broadcasting: '$beaconPayload'. Write a 1-sentence, engaging, helpful tip as an offline AI companion for the user."
+        val prompt = "User is walking past a physical beacon at $locationName broadcasting: '$beaconPayload'. If this represents a shop or advertisement, write a 1-sentence engaging promotional message to sell it. If it represents a gate or checkpoint, write a 1-sentence informative and helpful tip. Act as an offline AI companion for the user."
         val response = llmEngine.generateOneOffText(prompt)
         
         timelineEventDao.insert(

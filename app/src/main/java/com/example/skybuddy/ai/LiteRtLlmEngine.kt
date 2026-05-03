@@ -106,21 +106,31 @@ class LiteRtLlmEngine @Inject constructor(
     }
 
     override suspend fun generateOneOffText(prompt: String): String = withContext(io) {
-        val currentEngine = engine ?: return@withContext "Error: model not loaded."
-        val builder = StringBuilder()
+        var tempEngine: Engine? = null
         var tempConv: Conversation? = null
+        val builder = StringBuilder()
         try {
+            val config = EngineConfig(
+                modelPath = expectedModelPath(),
+                backend = LiteRtBackend.CPU(),
+                visionBackend = LiteRtBackend.CPU(),
+                cacheDir = context.cacheDir.absolutePath
+            )
+            tempEngine = Engine(config)
+            tempEngine.initialize()
+
             val conversationConfig = ConversationConfig(
                 systemInstruction = Contents.of(SYSTEM_PROMPT),
-                tools = listOf(tool(toolSet))
+                tools = emptyList() // No tools needed for one-off beacon toast
             )
-            tempConv = currentEngine.createConversation(conversationConfig)
+            tempConv = tempEngine.createConversation(conversationConfig)
             tempConv.sendMessageAsync(prompt).collect { chunk -> builder.append(chunk) }
             builder.toString()
         } catch (t: Throwable) {
             "Error generating response: ${t.message}"
         } finally {
             runCatching { tempConv?.close() }
+            runCatching { tempEngine?.close() }
         }
     }
 
