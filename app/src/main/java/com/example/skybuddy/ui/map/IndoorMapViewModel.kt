@@ -10,6 +10,7 @@ import com.example.skybuddy.domain.state.JourneyManager
 import com.example.skybuddy.location.IndoorLocationManager
 import com.example.skybuddy.ui.journey.JourneyPhase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +43,7 @@ class IndoorMapViewModel @Inject constructor(
     
     private var globalStartId: String = ""
     private var globalGoalId: String = ""
+    private var randomGateId: String? = null
     
     val uiState: StateFlow<MapUiState> = combine(
         _internalState,
@@ -80,6 +82,12 @@ class IndoorMapViewModel @Inject constructor(
     private fun updatePathForPhase(phase: JourneyPhase) {
         val layout = _internalState.value.layout ?: return
         var stepText = ""
+        
+        if (randomGateId == null) {
+            val gates = layout.floors.flatMap { it.nodes }.filter { it.type == "GATE" }
+            randomGateId = if (gates.isNotEmpty()) gates.random().id else "GATE_C1"
+        }
+        val targetGate = randomGateId!!
 
         when (phase) {
             JourneyPhase.HOME, JourneyPhase.AIRPORT_ENTRANCE -> {
@@ -94,17 +102,17 @@ class IndoorMapViewModel @Inject constructor(
             }
             JourneyPhase.SECURITY_CHECKPOINT -> {
                 globalStartId = "SECURITY_CHECK"
-                globalGoalId = "GATE_4" // Gate 4 is on Floor 1
-                stepText = "Step 3: Head to Gate 4. Use the lift."
+                globalGoalId = targetGate
+                stepText = "Step 3: Head to Gate ${targetGate.replace("GATE_", "")}."
             }
             JourneyPhase.GATE -> {
-                globalStartId = "GATE_4"
-                globalGoalId = "GATE_4"
+                globalStartId = targetGate
+                globalGoalId = targetGate
                 stepText = "You have arrived at your gate."
             }
         }
 
-        var startFloor = 0
+        var startFloor = 1
         var startX = 500f
         var startY = 900f
         
@@ -137,31 +145,29 @@ class IndoorMapViewModel @Inject constructor(
     private fun recalculatePath() {
         val layout = _internalState.value.layout ?: return
         val currentFloor = _internalState.value.currentFloor
-        val goalNodeFloor = layout.floors.find { f -> f.nodes.any { it.id == globalGoalId } }?.level ?: currentFloor
-        val startNodeFloor = layout.floors.find { f -> f.nodes.any { it.id == globalStartId } }?.level ?: currentFloor
+        val goalId = globalGoalId
 
-        if (globalStartId == globalGoalId) {
+        if (globalStartId == globalGoalId || goalId.isEmpty()) {
             _internalState.update { it.copy(currentPath = emptyList()) }
             return
         }
 
-        val localStartId = if (currentFloor == startNodeFloor) globalStartId else if (currentFloor == 0) "LIFT_GF" else "LIFT_FF"
-        val localGoalId = if (currentFloor == goalNodeFloor) globalGoalId else if (currentFloor == 0) "LIFT_GF" else "LIFT_FF"
+        val startX = indoorLocationManager.currentX.value
+        val startY = indoorLocationManager.currentY.value
 
-        if (localStartId == localGoalId) {
-             _internalState.update { it.copy(currentPath = emptyList()) }
-             return
+        viewModelScope.launch(Dispatchers.Default) {
+            val path = pathfinder.findPath(layout, currentFloor, startX, startY, goalId)
+            _internalState.update { it.copy(currentPath = path) }
         }
-
-        val path = pathfinder.findPath(layout, currentFloor, localStartId, localGoalId)
-        _internalState.update { it.copy(currentPath = path) }
     }
 
     fun setLocation(x: Float, y: Float) {
         indoorLocationManager.calibratePosition(x, y)
+        recalculatePath()
     }
 
     fun simulateStep() {
         indoorLocationManager.onStepDetected()
+        recalculatePath()
     }
 }
