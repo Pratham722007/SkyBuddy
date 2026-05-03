@@ -1,6 +1,5 @@
 package com.example.skybuddy.ai.tools
 
-import com.example.skybuddy.data.db.TimelineEventDao
 import com.example.skybuddy.data.repository.FlightRepository
 import com.example.skybuddy.data.repository.LuggageRepository
 import com.example.skybuddy.data.repository.ReceiptRepository
@@ -20,10 +19,13 @@ class SkyBuddyToolSet @Inject constructor(
     private val flightRepository: FlightRepository,
     private val luggageRepository: LuggageRepository,
     private val receiptRepository: ReceiptRepository,
-    private val timelineEventDao: TimelineEventDao
+    private val airportKb: AirportKnowledgeBaseTool
 ) : ToolSet {
 
     private val activeFlight = AtomicReference<String?>(null)
+
+    // Set by ChatViewModel before each turn; fires a UI status update when a tool starts
+    var onToolStarted: ((label: String) -> Unit)? = null
 
     @Volatile var didQueryReceipts: Boolean = false
         private set
@@ -44,13 +46,18 @@ class SkyBuddyToolSet @Inject constructor(
         didQueryReceipts = false
         didQueryLuggage = false
         didTouchFlight = false
+        onToolStarted = null
     }
+
+    /** Fires the UI callback with a human-readable status label. */
+    private fun notifyTool(label: String) = onToolStarted?.invoke(label)
 
     @Tool(description = "Save a detailed visual description of the user's checked luggage. The active flight is known automatically. Use this when the user shows a picture of their bag and wants you to remember it.")
     fun saveBag(
         @ToolParam(description = "A detailed 1-2 sentence description of the bag based on the image provided.")
         description: String
-    ): String = bridge("Saving luggage description...") {
+    ): String = bridge {
+        notifyTool("🧳 Saving bag description...")
         didQueryLuggage = true
         luggageRepository.save(description, activeFlightNumber)
         if (activeFlightNumber != null) "SUCCESS: Bag saved for flight $activeFlightNumber."
@@ -58,7 +65,8 @@ class SkyBuddyToolSet @Inject constructor(
     }
 
     @Tool(description = "Retrieve the saved visual description of the user's checked luggage for the active flight. Use this when the user asks what their bag looks like or says they lost their bag.")
-    fun getBagDescription(): Map<String, String> = bridge("Retrieving luggage description...") {
+    fun getBagDescription(): Map<String, String> = bridge {
+        notifyTool("🧳 Looking up bag description...")
         didQueryLuggage = true
         val bag = activeFlightNumber?.let { luggageRepository.latestForFlight(it) }
             ?: luggageRepository.latest()
@@ -67,7 +75,8 @@ class SkyBuddyToolSet @Inject constructor(
     }
 
     @Tool(description = "Retrieve the saved expense receipts for the active flight. Use this when the user asks about their expenses for this trip.")
-    fun getReceipts(): List<Map<String, String>> = bridge("Checking saved receipts...") {
+    fun getReceipts(): List<Map<String, String>> = bridge {
+        notifyTool("🧾 Fetching expense receipts...")
         didQueryReceipts = true
         val rows = activeFlightNumber?.let { receiptRepository.allForFlight(it) }
             ?: receiptRepository.all()
@@ -81,7 +90,8 @@ class SkyBuddyToolSet @Inject constructor(
     }
 
     @Tool(description = "Get real-time status, gate, terminal, time and seat for the active flight. The flight is known from the chat context.")
-    fun getFlightStatus(): Map<String, Any> = bridge("Checking live flight data...") {
+    fun getFlightStatus(): Map<String, Any> = bridge {
+        notifyTool("✈️ Checking flight status...")
         val number = activeFlightNumber ?: return@bridge mapOf("error" to "No active flight in this chat.")
         didTouchFlight = true
         val entity = flightRepository.getFlight(number)
@@ -100,7 +110,8 @@ class SkyBuddyToolSet @Inject constructor(
     fun checkLoungeAccess(
         @ToolParam(description = "The credit card name, e.g. Amex Platinum or Chase Sapphire")
         creditCard: String
-    ): String = bridge("Checking lounge access privileges...") {
+    ): String = bridge {
+        notifyTool("🏙️ Checking lounge access...")
         val terminal = activeFlightNumber
             ?.let { flightRepository.getFlight(it) }
             ?.terminal
@@ -119,7 +130,8 @@ class SkyBuddyToolSet @Inject constructor(
     }
 
     @Tool(description = "Check seat details and comfort information for the user's seat on the active flight. Reads the seat from the active flight context.")
-    fun checkSeatDetails(): String = bridge("Checking seat details...") {
+    fun checkSeatDetails(): String = bridge {
+        notifyTool("💺 Looking up seat details...")
         val number = activeFlightNumber ?: return@bridge "No active flight."
         val seat = flightRepository.getFlight(number)?.seat
         if (seat.isNullOrBlank() || seat.equals("Unknown", true)) {
@@ -131,7 +143,8 @@ class SkyBuddyToolSet @Inject constructor(
     fun setMySeat(
         @ToolParam(description = "The seat number, e.g. 12A, 4C, 27F.")
         seatNumber: String
-    ): String = bridge("Saving seat number...") {
+    ): String = bridge {
+        notifyTool("💺 Saving seat number...")
         val number = activeFlightNumber ?: return@bridge "No active flight to update."
         val seat = seatNumber.trim().uppercase()
         if (!seat.matches(Regex("^\\d{1,3}[A-K]$"))) return@bridge "Seat '$seatNumber' does not look like a valid seat number."
@@ -145,12 +158,33 @@ class SkyBuddyToolSet @Inject constructor(
         @ToolParam(description = "The vendor or restaurant name on the receipt.") vendor: String,
         @ToolParam(description = "The total amount paid.") amount: String,
         @ToolParam(description = "The currency of the transaction, e.g. USD or EUR.") currency: String
-    ): String = bridge("Saving expense receipt...") {
+    ): String = bridge {
+        notifyTool("🧾 Saving receipt from $vendor...")
         didQueryReceipts = true
         receiptRepository.save(vendor, amount, currency, activeFlightNumber)
         if (activeFlightNumber != null) "SUCCESS: Receipt saved for flight $activeFlightNumber."
         else "SUCCESS: Receipt saved."
     }
+
+    @Tool(
+        description = "Fuzzy-searches the Kempegowda International Airport (BLR) knowledge base. " +
+            "Returns restaurants, cafes, shops, lounges, services, menus, timings, gate proximity, and location data. " +
+            "Call this whenever the user asks ANYTHING about food, drinks, shopping, facilities, " +
+            "gate proximity, open hours, specific menu items, or prices at Bangalore airport."
+    )
+    fun searchAirportKb(
+        @ToolParam(description = "Natural-language query, e.g. 'South Indian breakfast near Gate 12', 'open coffee shop', 'veg food after security T2'")
+        query: String
+    ): String = bridge {
+        notifyTool("🔍 Searching airport knowledge base...")
+        try {
+            airportKb.search(query = query, topK = 5)
+        } catch (e: Exception) {
+            android.util.Log.e("SkyBuddy", "Error in searchAirportKb: ", e)
+            "{\"error\": \"Airport KB search failed: ${e.message}\", \"query\": \"$query\", \"pois\": [], \"services\": [], \"totalMatches\": 0}"
+        }
+    }
+
 
     private fun describeSeat(seat: String): String = when {
         seat.endsWith("A") || seat.endsWith("F") ->
@@ -160,19 +194,9 @@ class SkyBuddyToolSet @Inject constructor(
         else -> "Seat $seat is a middle seat."
     }
 
-    private fun <T> bridge(logMessage: String, block: suspend () -> T): T = runBlocking {
+    private fun <T> bridge(block: suspend () -> T): T = runBlocking {
         withTimeout(TOOL_TIMEOUT_MS) {
-            withContext(Dispatchers.IO) {
-                timelineEventDao.insert(
-                    com.example.skybuddy.data.db.TimelineEventEntity(
-                        timestamp = System.currentTimeMillis(),
-                        role = "SYSTEM",
-                        uiComponentType = "TOOL_CALL_CARD",
-                        content = logMessage
-                    )
-                )
-                block()
-            }
+            withContext(Dispatchers.IO) { block() }
         }
     }
 

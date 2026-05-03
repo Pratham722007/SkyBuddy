@@ -27,7 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState 
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -108,10 +108,6 @@ fun ChatScreen(
             else cameraPermission.request(Manifest.permission.CAMERA)
         } else {
             viewModel.setFlightContext(flightNumber)
-            // Send a welcome message if this is the first time opening chat
-            if (timelineEvents.isEmpty()) {
-                viewModel.sendWelcome(flightNumber)
-            }
         }
     }
 
@@ -232,10 +228,10 @@ fun ChatScreen(
                     }
                 }
             }
-            items(timelineEvents, key = { "msg_${it.id}" }) { ConversationFlowItem(it) }
+            items(timelineEvents, key = { it.id }) { ConversationFlowItem(it) }
             if (state.isThinking) {
                 item {
-                    ThinkingIndicator()
+                    ThinkingIndicator(state.toolStatusLabel)
                 }
             }
         }
@@ -377,7 +373,7 @@ fun ChatScreen(
 }
 
 @Composable
-private fun ThinkingIndicator() {
+private fun ThinkingIndicator(toolLabel: String? = null) {
     val transition = rememberInfiniteTransition(label = "dots")
     val offsets = (0..2).map { i ->
         transition.animateFloat(
@@ -407,6 +403,10 @@ private fun ThinkingIndicator() {
             )
         }
         Spacer(Modifier.width(6.dp))
-        Text("Thinking...", style = MaterialTheme.typography.bodySmall, color = OnSurfaceDim)
+        Text(
+            text = toolLabel ?: "Thinking...",
+            style = MaterialTheme.typography.bodySmall,
+            color = OnSurfaceDim
+        )
     }
 }

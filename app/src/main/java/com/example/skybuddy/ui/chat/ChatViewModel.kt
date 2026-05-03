@@ -29,7 +29,9 @@ import javax.inject.Inject
 data class ChatUiState(
     val input: String = "",
     val isThinking: Boolean = false,
-    val isIntercomMode: Boolean = false
+    val isIntercomMode: Boolean = false,
+    // Non-null while a tool call is in-flight; shown in the chat as a status pill
+    val toolStatusLabel: String? = null
 )
 
 @HiltViewModel
@@ -71,23 +73,6 @@ class ChatViewModel @Inject constructor(
     fun onInputChanged(value: String) = _state.update { it.copy(input = value) }
 
     fun toggleIntercom() = _state.update { it.copy(isIntercomMode = !it.isIntercomMode) }
-
-    fun sendWelcome(flightNumber: String?) {
-        viewModelScope.launch {
-            val flight = flightNumber?.let { flightRepository.getFlight(it) }
-            val greeting = if (flight != null) {
-                "Hi! I'm SkyBuddy, your travel assistant. I'm tracking flight ${flight.flightNumber} (${flight.airline}) from ${flight.origin} to ${flight.destination}. Ask me about your gate, terminal, nearby food, or anything else!"
-            } else {
-                "Hi! I'm SkyBuddy, your airport travel assistant. How can I help you today?"
-            }
-            timelineEventDao.insert(TimelineEventEntity(
-                timestamp = System.currentTimeMillis(),
-                role = "GEMMA",
-                uiComponentType = "TEXT",
-                content = greeting
-            ))
-        }
-    }
     
     private fun getSpatialContext(): String {
         val x = indoorLocationManager.currentX.value
@@ -108,13 +93,15 @@ class ChatViewModel @Inject constructor(
                 content = prompt
             ))
             
-            _state.update { it.copy(input = "", isThinking = true) }
-            
+            _state.update { it.copy(input = "", isThinking = true, toolStatusLabel = null) }
+
             val spatialContext = getSpatialContext()
             val finalContext = if (hiddenContext != null) "$spatialContext\n$hiddenContext" else spatialContext
             val query = "$finalContext\n$prompt"
-            val result = chatTurn.text(query, pinnedFlightNumber)
-            
+            val result = chatTurn.text(query, pinnedFlightNumber) { toolLabel ->
+                _state.update { it.copy(toolStatusLabel = toolLabel) }
+            }
+
             applyTurn(result.response, result.flight, result.luggage, result.receipts)
         }
         return prompt
@@ -133,13 +120,15 @@ class ChatViewModel @Inject constructor(
                 content = actualPrompt
             ))
             
-            _state.update { it.copy(input = "", isThinking = true) }
-            
+            _state.update { it.copy(input = "", isThinking = true, toolStatusLabel = null) }
+
             val spatialContext = getSpatialContext()
             val finalContext = if (hiddenContext != null) "$spatialContext\n$hiddenContext" else spatialContext
             val query = "$finalContext\n$actualPrompt"
-            val result = chatTurn.image(query, bitmap, pinnedFlightNumber)
-            
+            val result = chatTurn.image(query, bitmap, pinnedFlightNumber) { toolLabel ->
+                _state.update { it.copy(toolStatusLabel = toolLabel) }
+            }
+
             applyTurn(result.response, result.flight, result.luggage, result.receipts)
         }
     }
@@ -210,6 +199,6 @@ class ChatViewModel @Inject constructor(
             ))
         }
 
-        _state.update { it.copy(isThinking = false) }
+        _state.update { it.copy(isThinking = false, toolStatusLabel = null) }
     }
 }
