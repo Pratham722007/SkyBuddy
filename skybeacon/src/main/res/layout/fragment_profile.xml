@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@color/background">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Owner Profile"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Email: admin@skybeacon.com"
+        android:textSize="18sp"
+        android:textColor="@color/black"
+        android:layout_marginBottom="48dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Custom SOS Message"
+        android:textSize="18sp"
+        android:textColor="@color/black"
+        android:layout_marginBottom="8dp" />
+
+    <EditText
+        android:id="@+id/et_sos_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="SkyBeacon:SOS|EMERGENCY ALERT..."
+        android:padding="16dp"
+        android:background="#FFFFFF"
+        android:elevation="2dp"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btn_save_sos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save SOS Message"
+        android:padding="16dp"
+        android:backgroundTint="@color/primary_accent"
+        android:textColor="@color/white"
+        android:layout_marginBottom="48dp" />
+
+    <Button
+        android:id="@+id/btn_logout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Logout"
+        android:padding="16dp"
+        android:backgroundTint="@color/destructive"
+        android:textColor="@color/white" />
+
+</LinearLayout>

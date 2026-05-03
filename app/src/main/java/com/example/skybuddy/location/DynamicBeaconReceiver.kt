@@ -84,6 +84,7 @@ class DynamicBeaconReceiver @Inject constructor(
             val scanner = bluetoothAdapter.bluetoothLeScanner
             scanner?.stopScan(scanCallback)
             isScanning = false
+            processedBeacons.clear() // Clear cache so user can re-test the same messages
         }
     }
 }

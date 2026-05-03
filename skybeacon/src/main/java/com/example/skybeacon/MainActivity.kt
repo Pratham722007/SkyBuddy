@@ -19,6 +19,15 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import androidx.appcompat.app.AlertDialog
+import android.view.View
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
@@ -36,10 +45,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         statusText = findViewById(R.id.status_text)
-        val btnCosta = findViewById<Button>(R.id.btn_costa)
-        val btnDutyFree = findViewById<Button>(R.id.btn_duty_free)
-        val btnStop = findViewById<Button>(R.id.btn_stop)
-
+        
         checkPermissions()
 
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -52,19 +58,60 @@ class MainActivity : AppCompatActivity() {
 
         advertiser = adapter.bluetoothLeAdvertiser
 
-        // Payloads are carried as the BLE local name in the scan response (31-byte budget,
-        // ~29 bytes after the AD header), so they must be short.
-        btnCosta.setOnClickListener {
-            startAdvertising("SkyBeacon:Costa|20% Mochas")
-        }
+        setupNavigation()
+        setupSOS()
+    }
 
-        btnDutyFree.setOnClickListener {
-            startAdvertising("SkyBeacon:DutyFree|Samples")
-        }
+    private fun setupNavigation() {
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNav.setupWithNavController(navController)
 
-        btnStop.setOnClickListener {
-            stopAdvertising()
+        // Hide bottom nav on login screen
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            if (destination.id == R.id.loginFragment) {
+                bottomNav.visibility = View.GONE
+            } else {
+                bottomNav.visibility = View.VISIBLE
+            }
         }
+    }
+
+    private fun setupSOS() {
+        val fabSos = findViewById<FloatingActionButton>(R.id.fab_sos)
+        fabSos.setOnClickListener {
+            val prefs = getSharedPreferences("skybeacon_prefs", Context.MODE_PRIVATE)
+            val sosMsg = prefs.getString("custom_sos_message", "SkyBeacon:SOS|EMERGENCY ALERT - Please contact airport staff immediately") ?: "SkyBeacon:SOS|EMERGENCY ALERT - Please contact airport staff immediately"
+            
+            AlertDialog.Builder(this)
+                .setTitle("Emergency SOS")
+                .setMessage("Send Emergency Alert to all users?")
+                .setPositiveButton("Confirm") { _, _ ->
+                    triggerBroadcast(sosMsg.take(26))
+                    
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val db = com.example.skybeacon.data.AppDatabase.getDatabase(this@MainActivity)
+                        db.broadcastLogDao().insertLog(
+                            com.example.skybeacon.data.BroadcastLog(
+                                shopName = "Global",
+                                broadcastType = "SOS",
+                                content = sosMsg
+                            )
+                        )
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+
+    fun triggerBroadcast(payload: String) {
+        startAdvertising(payload)
+    }
+
+    fun haltBroadcast() {
+        stopAdvertising()
     }
 
     private fun checkPermissions() {

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="1dp"
+    app:cardBackgroundColor="@color/white">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tv_offer_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_toStartOf="@id/btn_advertise_offer"
+            android:text="Offer Title"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="@color/black" />
+
+        <TextView
+            android:id="@+id/tv_offer_discount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv_offer_title"
+            android:layout_marginTop="4dp"
+            android:text="20% OFF"
+            android:textColor="@color/text_grey" />
+
+        <Button
+            android:id="@+id/btn_advertise_offer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toStartOf="@id/btn_delete_offer"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="8dp"
+            android:text="Advertise"
+            android:backgroundTint="@color/primary_accent" />
+            
+        <ImageButton
+            android:id="@+id/btn_delete_offer"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:src="@android:drawable/ic_menu_delete"
+            android:background="?selectableItemBackgroundBorderless"
+            android:contentDescription="Delete" />
+            
+    </RelativeLayout>
+</androidx.cardview.widget.CardView>
